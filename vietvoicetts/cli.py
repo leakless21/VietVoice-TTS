@@ -5,23 +5,45 @@ Command-line interface for VietVoice TTS
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any, Union
 
 from .core import ModelConfig
 from .core.model_config import MODEL_GENDER, MODEL_GROUP, MODEL_AREA, MODEL_EMOTION
 from .api import TTSApi
 
 
+# ANSI color codes for rich formatting
+class Colors:
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    CYAN = '\033[96m'
+    MAGENTA = '\033[95m'
+    BLUE = '\033[94m'
+
+
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
         description="VietVoice TTS - Vietnamese Text-to-Speech",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  vietvoicetts "Hello world" output.wav
+  vietvoicetts "Xin chào Việt Nam" output.wav --gender female --area northern
+  vietvoicetts "Hello world" output.wav --reference-audio ref.wav --reference-text "Hello"
+
+Interactive Mode:
+  Run without arguments to enter interactive mode:
+  vietvoicetts
+        """
     )
     
     # Required arguments
-    parser.add_argument("text", help="Text to synthesize")
-    parser.add_argument("output", help="Output audio file path")
+    parser.add_argument("text", nargs='?', help="Text to synthesize")
+    parser.add_argument("output", nargs='?', help="Output audio file path")
     
     # Voice selection
     parser.add_argument("--gender", choices=MODEL_GENDER, help="Voice gender")
@@ -61,6 +83,15 @@ def main():
     
     args = parser.parse_args()
     
+    # Check if interactive mode should be activated
+    if len(sys.argv) == 1:
+        run_interactive_mode()
+        return
+    
+    # Validate required arguments in non-interactive mode
+    if not args.text or not args.output:
+        parser.error("text and output arguments are required in non-interactive mode")
+    
     # Validate reference audio/text
     if args.reference_audio and not args.reference_text:
         parser.error("--reference-text is required when using --reference-audio")
@@ -94,23 +125,375 @@ def main():
         sys.exit(1)
 
 
-def create_config(args) -> ModelConfig:
-    """Create ModelConfig from command line arguments"""
-    return ModelConfig(
-        model_url=args.model_url or "https://huggingface.co/nguyenvulebinh/VietVoice-TTS/resolve/main/model-bin.pt",
-        model_cache_dir=args.model_cache_dir or "~/.cache/vietvoicetts",
-        nfe_step=args.nfe_step,
-        fuse_nfe=args.fuse_nfe,
-        speed=args.speed,
-        random_seed=args.random_seed,
-        cross_fade_duration=args.cross_fade_duration,
-        max_chunk_duration=args.max_chunk_duration,
-        min_target_duration=args.min_target_duration,
-        inter_op_num_threads=args.inter_op_threads,
-        intra_op_num_threads=args.intra_op_threads,
-        log_severity_level=args.log_severity
-    )
+def create_config(args: Union[argparse.Namespace, Dict[str, Any]]) -> ModelConfig:
+    """Create ModelConfig from command line arguments or interactive settings"""
+    if isinstance(args, dict):
+        # Map interactive keys to ModelConfig fields and filter out None values
+        config_params = {
+            'model_url': args.get('model_url'),
+            'model_cache_dir': args.get('model_cache_dir'),
+            'nfe_step': args.get('nfe_step'),
+            'fuse_nfe': args.get('fuse_nfe'),
+            'speed': args.get('speed'),
+            'random_seed': args.get('random_seed'),
+            'cross_fade_duration': args.get('cross_fade_duration'),
+            'max_chunk_duration': args.get('max_chunk_duration'),
+            'min_target_duration': args.get('min_target_duration'),
+            'inter_op_num_threads': args.get('inter_op_threads'),
+            'intra_op_num_threads': args.get('intra_op_threads'),
+            'log_severity_level': args.get('log_severity')
+        }
+        # Remove keys with None values so dataclass defaults are used
+        final_params = {k: v for k, v in config_params.items() if v is not None}
+        return ModelConfig(**final_params)
+    else:
+        # Handle argparse.Namespace (non-interactive mode)
+        return ModelConfig(
+            model_url=args.model_url or "https://huggingface.co/nguyenvulebinh/VietVoice-TTS/resolve/main/model-bin.pt",
+            model_cache_dir=args.model_cache_dir or "~/.cache/vietvoicetts",
+            nfe_step=args.nfe_step,
+            fuse_nfe=args.fuse_nfe,
+            speed=args.speed,
+            random_seed=args.random_seed,
+            cross_fade_duration=args.cross_fade_duration,
+            max_chunk_duration=args.max_chunk_duration,
+            min_target_duration=args.min_target_duration,
+            inter_op_num_threads=args.inter_op_threads,
+            intra_op_num_threads=args.intra_op_threads,
+            log_severity_level=args.log_severity
+        )
+
+
+def run_interactive_mode():
+    """Run the interactive menu system"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🎤 VietVoice TTS - Interactive Mode{Colors.RESET}")
+    print(f"{Colors.GREEN}Welcome to the interactive text-to-speech synthesizer!{Colors.RESET}\n")
+    
+    # Collect required inputs first
+    settings = get_required_inputs()
+    
+    # Set defaults for optional parameters
+    settings.update(get_default_settings())
+    
+    # Main menu loop
+    while True:
+        display_main_menu(settings)
+        choice = input(f"\n{Colors.YELLOW}Select option [1-7]: {Colors.RESET}").strip()
+        
+        if choice == '1':
+            settings = edit_voice_selection(settings)
+        elif choice == '2':
+            settings = edit_reference_audio(settings)
+        elif choice == '3':
+            settings = edit_performance_tuning(settings)
+        elif choice == '4':
+            settings = edit_model_configuration(settings)
+        elif choice == '5':
+            settings = edit_audio_processing(settings)
+        elif choice == '6':
+            settings = edit_onnx_runtime(settings)
+        elif choice == '7':
+            if confirm_and_synthesize(settings):
+                break
+        else:
+            print(f"{Colors.RED}❌ Invalid choice. Please select 1-7.{Colors.RESET}")
+
+
+def get_required_inputs() -> Dict[str, Any]:
+    """Get required text and output filename from user"""
+    print(f"{Colors.CYAN}{Colors.BOLD}📋 Required Information{Colors.RESET}")
+    
+    text = input(f"{Colors.GREEN}Enter text to synthesize: {Colors.RESET}").strip()
+    while not text:
+        print(f"{Colors.RED}❌ Text cannot be empty.{Colors.RESET}")
+        text = input(f"{Colors.GREEN}Enter text to synthesize: {Colors.RESET}").strip()
+    
+    default_filename = "output"
+    output = input(f"{Colors.GREEN}Enter output filename (default: {default_filename}.wav): {Colors.RESET}").strip()
+    if not output:
+        output = default_filename
+    
+    return {'text': text, 'output': output}
+
+
+def get_default_settings() -> Dict[str, Any]:
+    """Get default settings for optional parameters"""
+    return {
+        'gender': None,
+        'group': None,
+        'area': None,
+        'emotion': None,
+        'reference_audio': None,
+        'reference_text': None,
+        'speed': 1.0,
+        'random_seed': 9527,
+        'model_url': None,
+        'model_cache_dir': None,
+        'nfe_step': 32,
+        'fuse_nfe': 1,
+        'cross_fade_duration': 0.1,
+        'max_chunk_duration': 15.0,
+        'min_target_duration': 1.0,
+        'inter_op_threads': 0,
+        'intra_op_threads': 0,
+        'log_severity': 4
+    }
+
+
+def display_main_menu(settings: Dict[str, Any]):
+    """Display the main interactive menu"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🎯 Main Menu{Colors.RESET}")
+    print(f"{Colors.BLUE}Current Settings:{Colors.RESET}")
+    
+    # Display current settings
+    text_preview = settings['text'][:50] + '...' if len(settings['text']) > 50 else settings['text']
+    print(f"  Text: {Colors.GREEN}{text_preview}{Colors.RESET}")
+    print(f"  Output: {Colors.GREEN}{settings['output']}{Colors.RESET}")
+    
+    voice_info = []
+    if settings['gender']:
+        voice_info.append(f"Gender: {settings['gender']}")
+    if settings['group']:
+        voice_info.append(f"Group: {settings['group']}")
+    if settings['area']:
+        voice_info.append(f"Area: {settings['area']}")
+    if settings['emotion']:
+        voice_info.append(f"Emotion: {settings['emotion']}")
+    
+    if voice_info:
+        print(f"  Voice: {Colors.YELLOW}{', '.join(voice_info)}{Colors.RESET}")
+    
+    if settings['reference_audio'] and settings['reference_text']:
+        print(f"  Reference: {Colors.MAGENTA}Enabled{Colors.RESET}")
+    
+    print(f"\n{Colors.CYAN}Options:{Colors.RESET}")
+    print("  1. Voice Selection")
+    print("  2. Reference Audio")
+    print("  3. Performance Tuning")
+    print("  4. Model Configuration")
+    print("  5. Audio Processing")
+    print("  6. ONNX Runtime")
+    print("  7. Confirm and Synthesize")
+
+
+def edit_voice_selection(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit voice selection parameters"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🎭 Voice Selection{Colors.RESET}")
+    
+    settings['gender'] = select_from_list("Gender", MODEL_GENDER, settings['gender'])
+    settings['group'] = select_from_list("Group", MODEL_GROUP, settings['group'])
+    settings['area'] = select_from_list("Area", MODEL_AREA, settings['area'])
+    settings['emotion'] = select_from_list("Emotion", MODEL_EMOTION, settings['emotion'])
+    
+    return settings
+
+
+def edit_reference_audio(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit reference audio parameters"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🎵 Reference Audio{Colors.RESET}")
+    
+    ref_audio = input(f"{Colors.GREEN}Reference audio path (current: {settings['reference_audio'] or 'None'}): {Colors.RESET}").strip()
+    if ref_audio:
+        settings['reference_audio'] = ref_audio
+    elif ref_audio == "" and settings['reference_audio']:
+        settings['reference_audio'] = None
+    
+    ref_text = input(f"{Colors.GREEN}Reference text (current: {settings['reference_text'] or 'None'}): {Colors.RESET}").strip()
+    if ref_text:
+        settings['reference_text'] = ref_text
+    elif ref_text == "" and settings['reference_text']:
+        settings['reference_text'] = None
+    
+    return settings
+
+
+def edit_performance_tuning(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit performance tuning parameters"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}⚡ Performance Tuning{Colors.RESET}")
+    
+    settings['speed'] = get_float_input("Speech speed multiplier", settings['speed'], 0.1, 3.0)
+    settings['random_seed'] = get_int_input("Random seed", settings['random_seed'], 0, 999999)
+    
+    return settings
+
+
+def edit_model_configuration(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit model configuration parameters"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🔧 Model Configuration{Colors.RESET}")
+    
+    settings['model_url'] = get_optional_input("Model URL", settings['model_url'])
+    settings['model_cache_dir'] = get_optional_input("Model cache directory", settings['model_cache_dir'])
+    settings['nfe_step'] = get_int_input("NFE steps", settings['nfe_step'], 1, 100)
+    settings['fuse_nfe'] = get_int_input("Fuse NFE steps", settings['fuse_nfe'], 0, 10)
+    
+    return settings
+
+
+def edit_audio_processing(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit audio processing parameters"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🎚️ Audio Processing{Colors.RESET}")
+    
+    settings['cross_fade_duration'] = get_float_input("Cross-fade duration (seconds)", settings['cross_fade_duration'], 0.01, 5.0)
+    settings['max_chunk_duration'] = get_float_input("Max chunk duration (seconds)", settings['max_chunk_duration'], 1.0, 60.0)
+    settings['min_target_duration'] = get_float_input("Min target duration (seconds)", settings['min_target_duration'], 0.1, 10.0)
+    
+    return settings
+
+
+def edit_onnx_runtime(settings: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit ONNX Runtime parameters"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}🔩 ONNX Runtime{Colors.RESET}")
+    
+    settings['inter_op_threads'] = get_int_input("Inter-op threads", settings['inter_op_threads'], 0, 64)
+    settings['intra_op_threads'] = get_int_input("Intra-op threads", settings['intra_op_threads'], 0, 64)
+    settings['log_severity'] = get_int_input("Log severity level", settings['log_severity'], 0, 5)
+    
+    return settings
+
+
+def select_from_list(prompt: str, choices: list, current: Any) -> Optional[str]:
+    """Let user select from a list of choices"""
+    print(f"\n{Colors.YELLOW}{prompt}:{Colors.RESET}")
+    for i, choice in enumerate(choices, 1):
+        marker = f"{Colors.GREEN}✓{Colors.RESET}" if choice == current else " "
+        print(f"  {i}. {marker} {choice}")
+    print(f"  0. {Colors.RED}Clear selection{Colors.RESET}")
+    
+    while True:
+        try:
+            choice_num = int(input(f"Select option [0-{len(choices)}] (current: {current or 'None'}): ").strip())
+            if choice_num == 0:
+                return None
+            elif 1 <= choice_num <= len(choices):
+                return choices[choice_num - 1]
+            else:
+                print(f"{Colors.RED}❌ Invalid choice. Please select 0-{len(choices)}.{Colors.RESET}")
+        except ValueError:
+            print(f"{Colors.RED}❌ Please enter a valid number.{Colors.RESET}")
+
+
+def get_float_input(prompt: str, current: float, min_val: float, max_val: float) -> float:
+    """Get validated float input from user"""
+    while True:
+        try:
+            value_str = input(f"{Colors.GREEN}{prompt} [{min_val}-{max_val}] (current: {current}): {Colors.RESET}").strip()
+            if not value_str:
+                return current
+            value = float(value_str)
+            if min_val <= value <= max_val:
+                return value
+            else:
+                print(f"{Colors.RED}❌ Value must be between {min_val} and {max_val}.{Colors.RESET}")
+        except ValueError:
+            print(f"{Colors.RED}❌ Please enter a valid number.{Colors.RESET}")
+
+
+def get_int_input(prompt: str, current: int, min_val: int, max_val: int) -> int:
+    """Get validated integer input from user"""
+    while True:
+        try:
+            value_str = input(f"{Colors.GREEN}{prompt} [{min_val}-{max_val}] (current: {current}): {Colors.RESET}").strip()
+            if not value_str:
+                return current
+            value = int(value_str)
+            if min_val <= value <= max_val:
+                return value
+            else:
+                print(f"{Colors.RED}❌ Value must be between {min_val} and {max_val}.{Colors.RESET}")
+        except ValueError:
+            print(f"{Colors.RED}❌ Please enter a valid integer.{Colors.RESET}")
+
+
+def get_optional_input(prompt: str, current: Optional[str]) -> Optional[str]:
+    """Get optional string input from user"""
+    value = input(f"{Colors.GREEN}{prompt} (current: {current or 'None'}): {Colors.RESET}").strip()
+    if not value:
+        return current
+    return value if value else None
+
+
+def confirm_and_synthesize(settings: Dict[str, Any]) -> bool:
+    """Display confirmation screen and synthesize if confirmed"""
+    print(f"\n{Colors.CYAN}{Colors.BOLD}✅ Confirmation Screen{Colors.RESET}")
+    
+    # Construct final output path
+    output_dir = Path("output")
+    output_filename = settings['output']
+    if not output_filename.lower().endswith('.wav'):
+        output_filename += '.wav'
+    final_output_path = output_dir / output_filename
+
+    # Validate reference audio/text mutual requirement
+    if bool(settings.get('reference_audio')) != bool(settings.get('reference_text')):
+        print(f"{Colors.RED}❌ Error: Reference audio and text must both be provided or both be empty.{Colors.RESET}")
+        input("Press Enter to return to menu...")
+        return False
+    
+    # Display all settings
+    print(f"\n{Colors.BLUE}Final Settings:{Colors.RESET}")
+    print(f"  Text: {Colors.GREEN}{settings['text']}{Colors.RESET}")
+    print(f"  Output Path: {Colors.GREEN}{final_output_path}{Colors.RESET}")
+    
+    if settings.get('gender'):
+        print(f"  Gender: {Colors.YELLOW}{settings['gender']}{Colors.RESET}")
+    if settings.get('group'):
+        print(f"  Group: {Colors.YELLOW}{settings['group']}{Colors.RESET}")
+    if settings.get('area'):
+        print(f"  Area: {Colors.YELLOW}{settings['area']}{Colors.RESET}")
+    if settings.get('emotion'):
+        print(f"  Emotion: {Colors.YELLOW}{settings['emotion']}{Colors.RESET}")
+    
+    if settings.get('reference_audio') and settings.get('reference_text'):
+        print(f"  Reference Audio: {Colors.MAGENTA}{settings['reference_audio']}{Colors.RESET}")
+        print(f"  Reference Text: {Colors.MAGENTA}{settings['reference_text']}{Colors.RESET}")
+    
+    print(f"  Speed: {Colors.CYAN}{settings.get('speed', 1.0)}{Colors.RESET}")
+    print(f"  Random Seed: {Colors.CYAN}{settings.get('random_seed', 9527)}{Colors.RESET}")
+    
+    print(f"  Model URL: {Colors.CYAN}{settings.get('model_url') or 'Default'}{Colors.RESET}")
+    print(f"  Model Cache Dir: {Colors.CYAN}{settings.get('model_cache_dir') or 'Default'}{Colors.RESET}")
+    print(f"  NFE Step: {Colors.CYAN}{settings.get('nfe_step', 32)}{Colors.RESET}")
+    print(f"  Fuse NFE: {Colors.CYAN}{settings.get('fuse_nfe', 1)}{Colors.RESET}")
+    
+    print(f"  Cross-fade Duration: {Colors.CYAN}{settings.get('cross_fade_duration', 0.1)}{Colors.RESET}")
+    print(f"  Max Chunk Duration: {Colors.CYAN}{settings.get('max_chunk_duration', 15.0)}{Colors.RESET}")
+    print(f"  Min Target Duration: {Colors.CYAN}{settings.get('min_target_duration', 1.0)}{Colors.RESET}")
+    
+    print(f"  Inter-op Threads: {Colors.CYAN}{settings.get('inter_op_threads', 0)}{Colors.RESET}")
+    print(f"  Intra-op Threads: {Colors.CYAN}{settings.get('intra_op_threads', 0)}{Colors.RESET}")
+    print(f"  Log Severity: {Colors.CYAN}{settings.get('log_severity', 4)}{Colors.RESET}")
+    
+    confirm = input(f"\n{Colors.YELLOW}Proceed with synthesis? (yes/no): {Colors.RESET}").strip().lower()
+    if confirm == 'yes':
+        try:
+            # Create output directory if it doesn't exist
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            config = create_config(settings) # Pass dictionary directly
+            api = TTSApi(config)
+            
+            duration = api.synthesize_to_file(
+                text=settings['text'],
+                output_path=str(final_output_path),
+                gender=settings.get('gender'),
+                group=settings.get('group'),
+                area=settings.get('area'),
+                emotion=settings.get('emotion'),
+                reference_audio=settings.get('reference_audio'),
+                reference_text=settings.get('reference_text')
+            )
+            
+            print(f"\n✅ Synthesis complete! Duration: {duration:.2f}s")
+            print(f"📄 Output saved to: {final_output_path}")
+            return True
+        except Exception as e:
+            print(f"❌ Error during synthesis: {e}", file=sys.stderr)
+            input("Press Enter to return to menu...")
+            return False
+    else:
+        print(f"{Colors.YELLOW}Synthesis cancelled.{Colors.RESET}")
+        return False
 
 
 if __name__ == "__main__":
-    main() 
+    main()
