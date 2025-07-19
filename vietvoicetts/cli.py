@@ -56,7 +56,7 @@ Interactive Mode:
     parser.add_argument("--reference-text", help="Text corresponding to reference audio")
     
     # Speed and random seed
-    parser.add_argument("--speed", type=float, default=1.0, help="Speech speed multiplier")
+    parser.add_argument("--speed", type=float, default=0.9, help="Speech speed multiplier")
     parser.add_argument("--random-seed", type=int, default=9527, help="Random seed. This is important for keeping the same voice when synthesizing.")
 
     # Model settings. These are not recommended to change.
@@ -131,7 +131,6 @@ def create_config(args: Union[argparse.Namespace, Dict[str, Any]]) -> ModelConfi
         # Map interactive keys to ModelConfig fields and filter out None values
         config_params = {
             'model_url': args.get('model_url'),
-            'model_cache_dir': args.get('model_cache_dir'),
             'nfe_step': args.get('nfe_step'),
             'fuse_nfe': args.get('fuse_nfe'),
             'speed': args.get('speed'),
@@ -150,7 +149,6 @@ def create_config(args: Union[argparse.Namespace, Dict[str, Any]]) -> ModelConfi
         # Handle argparse.Namespace (non-interactive mode)
         return ModelConfig(
             model_url=args.model_url or "https://huggingface.co/nguyenvulebinh/VietVoice-TTS/resolve/main/model-bin.pt",
-            model_cache_dir=args.model_cache_dir or "~/.cache/vietvoicetts",
             nfe_step=args.nfe_step,
             fuse_nfe=args.fuse_nfe,
             speed=args.speed,
@@ -225,10 +223,9 @@ def get_default_settings() -> Dict[str, Any]:
         'emotion': None,
         'reference_audio': None,
         'reference_text': None,
-        'speed': 1.0,
+        'speed': 0.9,
         'random_seed': 9527,
         'model_url': None,
-        'model_cache_dir': None,
         'nfe_step': 32,
         'fuse_nfe': 1,
         'cross_fade_duration': 0.1,
@@ -322,7 +319,6 @@ def edit_model_configuration(settings: Dict[str, Any]) -> Dict[str, Any]:
     print(f"\n{Colors.CYAN}{Colors.BOLD}🔧 Model Configuration{Colors.RESET}")
     
     settings['model_url'] = get_optional_input("Model URL", settings['model_url'])
-    settings['model_cache_dir'] = get_optional_input("Model cache directory", settings['model_cache_dir'])
     settings['nfe_step'] = get_int_input("NFE steps", settings['nfe_step'], 1, 100)
     settings['fuse_nfe'] = get_int_input("Fuse NFE steps", settings['fuse_nfe'], 0, 10)
     
@@ -447,11 +443,11 @@ def confirm_and_synthesize(settings: Dict[str, Any]) -> bool:
         print(f"  Reference Audio: {Colors.MAGENTA}{settings['reference_audio']}{Colors.RESET}")
         print(f"  Reference Text: {Colors.MAGENTA}{settings['reference_text']}{Colors.RESET}")
     
-    print(f"  Speed: {Colors.CYAN}{settings.get('speed', 1.0)}{Colors.RESET}")
-    print(f"  Random Seed: {Colors.CYAN}{settings.get('random_seed', 9527)}{Colors.RESET}")
+    print(f"  Speed: {Colors.CYAN}{settings['speed']:.2f}{Colors.RESET}")
+    print(f"  Random Seed: {Colors.CYAN}{settings['random_seed']}{Colors.RESET}")
     
+    print(f"{Colors.BOLD}\nModel Parameters:{Colors.RESET}")
     print(f"  Model URL: {Colors.CYAN}{settings.get('model_url') or 'Default'}{Colors.RESET}")
-    print(f"  Model Cache Dir: {Colors.CYAN}{settings.get('model_cache_dir') or 'Default'}{Colors.RESET}")
     print(f"  NFE Step: {Colors.CYAN}{settings.get('nfe_step', 32)}{Colors.RESET}")
     print(f"  Fuse NFE: {Colors.CYAN}{settings.get('fuse_nfe', 1)}{Colors.RESET}")
     

@@ -157,6 +157,7 @@ Thumbs.db
 *.pkl
 *.pth
 *.bin
+*.pt
 
 # Temporary files
 *.tmp

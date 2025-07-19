@@ -23,12 +23,12 @@ class ModelConfig:
     
     # Model settings
     model_url: str = "https://huggingface.co/nguyenvulebinh/VietVoice-TTS/resolve/main/model-bin.pt"
-    model_cache_dir: str = "~/.cache/vietvoicetts"
+    model_cache_dir: str = "models"
     model_filename: str = "model-bin.pt"
     nfe_step: int = 32
     fuse_nfe: int = 1
     sample_rate: int = 24000
-    speed: float = 1.0
+    speed: float = 0.9
     random_seed: int = 9527
     hop_length: int = 256
     
