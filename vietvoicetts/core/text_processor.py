@@ -6,6 +6,7 @@ import re
 import numpy as np
 from pathlib import Path
 from typing import List, Dict
+from loguru import logger
 
 
 class TextProcessor:
@@ -96,7 +97,7 @@ class TextProcessor:
                         if len(part) < max_chars:
                             sentences.append(part)
                         else:
-                            print(f"Warning: Part too long ({len(part)} chars), splitting further: {part[:50]}...")
+                            logger.warning(f"Part too long ({len(part)} chars), splitting further: {part[:50]}...")
                             num_parts = len(part) // max_chars + 1
                             part_length = len(part) // num_parts
                             for i in range(num_parts):
@@ -157,5 +158,5 @@ class TextProcessor:
             final_chunks.append(current)
             i += 1
         
-        print(f"chunk_text: {len(final_chunks)} chunks: {[len(text) for text in final_chunks]}. Max chars: {max_chars}")
+        logger.debug(f"chunk_text: {len(final_chunks)} chunks: {[len(text) for text in final_chunks]}. Max chars: {max_chars}")
         return final_chunks 

@@ -10,6 +10,7 @@ from typing import List, Tuple, Optional
 import json
 import onnxruntime
 import random
+from loguru import logger
 
 from .model_config import ModelConfig, MODEL_GENDER, MODEL_GROUP, MODEL_AREA, MODEL_EMOTION
 
@@ -165,7 +166,7 @@ class ModelSessionManager:
                 raise FileNotFoundError(f"Reference audio file not found: {reference_audio}")
             if len(filter_options) > 0:
                 raise ValueError(f"Cannot use reference audio and text with options: {list(filter_options.keys())}")
-            print(f"Using reference audio and text: {reference_audio}")
+            logger.info(f"Using reference audio and text: {reference_audio}")
             return reference_audio, reference_text
 
         try:
@@ -183,7 +184,7 @@ class ModelSessionManager:
             else:
                 sample, sample_idx = random.choice(available_samples)
 
-            print(f"Selected sample #{sample_idx} with gender: {sample['gender']}, group: {sample['group']}, area: {sample['area']}, emotion: {sample['emotion']}")
+            logger.info(f"Selected sample #{sample_idx} with gender: {sample['gender']}, group: {sample['group']}, area: {sample['area']}, emotion: {sample['emotion']}")
 
             # Get the cached model path
             model_path = self.config.ensure_model_downloaded()

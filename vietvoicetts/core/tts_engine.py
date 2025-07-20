@@ -4,9 +4,9 @@ TTS Engine - Main speech synthesis engine
 
 import time
 import numpy as np
-import torch
 from typing import List, Tuple, Optional, Generator
 from tqdm import tqdm
+from loguru import logger
 
 from .model_config import ModelConfig
 from .model import ModelSessionManager
@@ -67,7 +67,7 @@ class TTSEngine:
         if total_estimated_duration <= self.config.max_chunk_duration:
             # Single chunk processing
             chunks = [target_text]
-            print(f"Single chunk: total estimated duration {total_estimated_duration:.1f}s (ref: {ref_audio_duration:.1f}s + target: {target_audio_duration:.1f}s)")
+            logger.info(f"Single chunk: total estimated duration {total_estimated_duration:.1f}s (ref: {ref_audio_duration:.1f}s + target: {target_audio_duration:.1f}s)")
         else:
             # Multiple chunks needed
             # Calculate available duration for target text per chunk (excluding reference audio)
@@ -92,15 +92,15 @@ class TTSEngine:
                     final_chunks.append(chunk)
                 else:
                     # Split this chunk further
-                    print(f"Warning: Chunk too long ({chunk_total_duration:.1f}s), splitting further...")
+                    logger.warning(f"Chunk too long ({chunk_total_duration:.1f}s), splitting further...")
                     # Calculate a smaller max_chars for this specific chunk
                     smaller_max_chars = int(len(chunk) * available_target_duration / chunk_target_duration * 0.9)  # 90% safety
                     sub_chunks = self.text_processor.chunk_text(chunk, max_chars=smaller_max_chars)
                     final_chunks.extend(sub_chunks)
             
             chunks = final_chunks
-            print(f"Long text detected (total estimated {total_estimated_duration:.1f}s), split into {len(chunks)} chunks")
-            print(f"Reference audio: {ref_audio_duration:.1f}s, available per chunk: {available_target_duration:.1f}s (with {safety_margin}s safety margin)")
+            logger.info(f"Long text detected (total estimated {total_estimated_duration:.1f}s), split into {len(chunks)} chunks")
+            logger.info(f"Reference audio: {ref_audio_duration:.1f}s, available per chunk: {available_target_duration:.1f}s (with {safety_margin}s safety margin)")
         
         # Prepare inputs for each chunk
         inputs_list = []
@@ -126,7 +126,7 @@ class TTSEngine:
             
             # Calculate and display total duration for this chunk
             chunk_total_duration = ref_audio_duration + chunk_target_duration
-            print(f"Chunk {i+1}/{len(chunks)}: {len(chunk)} chars, total duration {chunk_total_duration:.1f}s (ref: {ref_audio_duration:.1f}s + target: {chunk_target_duration:.1f}s). Content: {chunk}")
+            logger.info(f"Chunk {i+1}/{len(chunks)}: {len(chunk)} chars, total duration {chunk_total_duration:.1f}s (ref: {ref_audio_duration:.1f}s + target: {chunk_target_duration:.1f}s). Content: {chunk}")
         
         return inputs_list
     
@@ -215,7 +215,7 @@ class TTSEngine:
             
             generated_waves = []
             for i, (audio, text_ids, max_duration, time_step) in enumerate(inputs_list):
-                print(f"Generating speech for chunk {i+1}/{len(inputs_list)}...")
+                logger.info(f"Generating speech for chunk {i+1}/{len(inputs_list)}...")
                 
                 preprocess_outputs = self._run_preprocess(audio, text_ids, max_duration)
                 (noise, rope_cos_q, rope_sin_q, rope_cos_k, rope_sin_k, 
@@ -231,7 +231,7 @@ class TTSEngine:
             
             # Concatenate all generated waves with cross-fading
             if len(generated_waves) > 1:
-                print(f"Concatenating {len(generated_waves)} chunks with improved cross-fade (duration: {self.config.cross_fade_duration}s)...")
+                logger.info(f"Concatenating {len(generated_waves)} chunks with improved cross-fade (duration: {self.config.cross_fade_duration}s)...")
             
             final_wave = self.audio_processor.concatenate_with_crossfade_improved(
                 generated_waves, self.config.cross_fade_duration, self.config.sample_rate
@@ -241,7 +241,7 @@ class TTSEngine:
             
             if output_path:
                 self.audio_processor.save_audio(final_wave, output_path, self.config.sample_rate)
-                print(f"Audio saved to: {output_path}")
+                logger.info(f"Audio saved to: {output_path}")
             
             return final_wave, generation_time
             
@@ -253,7 +253,7 @@ class TTSEngine:
         if reference_audio is None:
             # If no reference audio is provided, configuration is valid
             # since the model will use built-in samples
-            print("✅ Configuration valid: Using built-in voice samples")
+            logger.info("Configuration valid: Using built-in voice samples")
             return True
         else:
             # Validate with the provided reference audio

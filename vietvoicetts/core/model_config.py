@@ -5,6 +5,7 @@ Configuration management for TTS inference
 import os
 import urllib.request
 import urllib.error
+from loguru import logger
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -67,18 +68,18 @@ class ModelConfig:
         
         # Download model if it doesn't exist
         if not model_path.exists():
-            print(f"Downloading model from {self.model_url}")
-            print(f"Saving to {model_path}")
+            logger.info(f"Downloading model from {self.model_url}")
+            logger.info(f"Saving to {model_path}")
             
             try:
                 # Download with progress indication
                 def progress_hook(block_num, block_size, total_size):
                     if total_size > 0:
                         percent = min(100, (block_num * block_size * 100) // total_size)
-                        print(f"\rDownloading: {percent}%", end='', flush=True)
+                        logger.info(f"Downloading: {percent}%")
                 
                 urllib.request.urlretrieve(self.model_url, model_path, progress_hook)
-                print(f"\n✅ Model downloaded successfully to {model_path}")
+                logger.info(f"Model downloaded successfully to {model_path}")
                 
             except urllib.error.URLError as e:
                 raise RuntimeError(f"Failed to download model from {self.model_url}: {e}")
@@ -88,7 +89,7 @@ class ModelConfig:
                     model_path.unlink()
                 raise RuntimeError(f"Failed to download model: {e}")
         else:
-            print(f"Using cached model: {model_path}")
+            logger.info(f"Using cached model: {model_path}")
         
         return str(model_path)
     
@@ -111,22 +112,22 @@ class ModelConfig:
             required_min_duration = ref_duration + safety_margin + self.min_target_duration
             
             if self.max_chunk_duration < required_min_duration:
-                print(f"❌ Configuration Error:")
-                print(f"   Reference audio: {ref_duration:.1f}s")
-                print(f"   Min target duration: {self.min_target_duration:.1f}s") 
-                print(f"   Safety margin: {safety_margin:.1f}s")
-                print(f"   Required max_chunk_duration: >{required_min_duration:.1f}s")
-                print(f"   Current max_chunk_duration: {self.max_chunk_duration:.1f}s")
+                logger.error("Configuration Error:")
+                logger.error(f"Reference audio: {ref_duration:.1f}s")
+                logger.error(f"Min target duration: {self.min_target_duration:.1f}s")
+                logger.error(f"Safety margin: {safety_margin:.1f}s")
+                logger.error(f"Required max_chunk_duration: >{required_min_duration:.1f}s")
+                logger.error(f"Current max_chunk_duration: {self.max_chunk_duration:.1f}s")
                 return False
             else:
-                print(f"✅ Configuration valid:")
-                print(f"   Reference audio: {ref_duration:.1f}s")
-                print(f"   Max chunk duration: {self.max_chunk_duration:.1f}s")
-                print(f"   Available target duration: {self.max_chunk_duration - ref_duration - safety_margin:.1f}s")
+                logger.info("Configuration valid:")
+                logger.info(f"Reference audio: {ref_duration:.1f}s")
+                logger.info(f"Max chunk duration: {self.max_chunk_duration:.1f}s")
+                logger.info(f"Available target duration: {self.max_chunk_duration - ref_duration - safety_margin:.1f}s")
                 return True
                 
         except Exception as e:
-            print(f"❌ Error validating reference audio: {e}")
+            logger.error(f"Error validating reference audio: {e}")
             return False
     
     @classmethod

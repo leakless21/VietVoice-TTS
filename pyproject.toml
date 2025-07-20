@@ -37,7 +37,8 @@ dependencies = [
     "soundfile>=0.10.3",
     "pydub>=0.25.0",
     "tqdm>=4.64.0",
-    "pytest>=8.3.5",
+    "loguru>=0.7.3",
+    "onnxruntime-gpu>=1.20.2",
 ]
 
 [project.optional-dependencies]
@@ -46,6 +47,9 @@ cpu = [
 ]
 gpu = [
     "onnxruntime-gpu>=1.15.0",
+]
+dev = [
+    "pytest>=8.3.5",
 ]
 
 [project.scripts]
