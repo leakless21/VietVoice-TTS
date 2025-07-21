@@ -2,31 +2,31 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
-from vietvoicetts.api import TTSApi, synthesize, synthesize_to_bytes
+from vietvoicetts.client import TTSApi, synthesize, synthesize_to_bytes
 from vietvoicetts.core.model_config import ModelConfig
 
 class TestApiFull(unittest.TestCase):
 
-    @patch('vietvoicetts.api.TTSEngine')
+    @patch('vietvoicetts.client.TTSEngine')
     def test_tts_api_init_with_config(self, mock_tts_engine):
         config = ModelConfig(speed=1.5)
         api = TTSApi(config)
         self.assertIs(api.config, config)
         self.assertIsNone(api._engine)
 
-    @patch('vietvoicetts.api.TTSEngine')
+    @patch('vietvoicetts.client.TTSEngine')
     def test_tts_api_init_no_config(self, mock_tts_engine):
         api = TTSApi()
         self.assertIsInstance(api.config, ModelConfig)
 
-    @patch('vietvoicetts.api.TTSEngine')
+    @patch('vietvoicetts.client.TTSEngine')
     def test_tts_api_engine_property(self, mock_tts_engine):
         api = TTSApi()
         engine = api.engine
         self.assertIs(engine, mock_tts_engine.return_value)
         self.assertIs(api.engine, engine)  # Should return the same instance
 
-    @patch('vietvoicetts.api.TTSEngine')
+    @patch('vietvoicetts.client.TTSEngine')
     def test_synthesize(self, mock_tts_engine):
         mock_engine_instance = MagicMock()
         mock_engine_instance.synthesize.return_value = (np.array([1,2,3]), 1.23)
@@ -46,7 +46,7 @@ class TestApiFull(unittest.TestCase):
             reference_text=None
         )
 
-    @patch('vietvoicetts.api.TTSApi.synthesize')
+    @patch('vietvoicetts.client.TTSApi.synthesize')
     def test_synthesize_to_file(self, mock_synthesize):
         mock_synthesize.return_value = (np.array([1,2,3]), 1.23)
         api = TTSApi()
@@ -54,7 +54,7 @@ class TestApiFull(unittest.TestCase):
         self.assertEqual(duration, 1.23)
         mock_synthesize.assert_called_once()
 
-    @patch('vietvoicetts.api.TTSApi.synthesize_to_file')
+    @patch('vietvoicetts.client.TTSApi.synthesize_to_file')
     @patch('builtins.open')
     @patch('tempfile.NamedTemporaryFile')
     def test_synthesize_to_bytes(self, mock_tempfile, mock_open, mock_synthesize_to_file):
@@ -71,7 +71,7 @@ class TestApiFull(unittest.TestCase):
         self.assertEqual(duration, 1.23)
         mock_synthesize_to_file.assert_called_once()
 
-    @patch('vietvoicetts.api.TTSApi')
+    @patch('vietvoicetts.client.TTSApi')
     def test_convenience_synthesize(self, mock_tts_api):
         mock_api_instance = MagicMock()
         mock_api_instance.synthesize_to_file.return_value = 1.23
@@ -92,7 +92,7 @@ class TestApiFull(unittest.TestCase):
             reference_text=None
         )
 
-    @patch('vietvoicetts.api.TTSApi')
+    @patch('vietvoicetts.client.TTSApi')
     def test_convenience_synthesize_to_bytes(self, mock_tts_api):
         mock_api_instance = MagicMock()
         mock_api_instance.synthesize_to_bytes.return_value = (b'wav_data', 1.23)

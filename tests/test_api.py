@@ -2,10 +2,10 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
-from vietvoicetts.api import TTSApi
+from vietvoicetts.client import TTSApi
 
 class TestApi(unittest.TestCase):
-    @patch('vietvoicetts.api.TTSEngine')
+    @patch('vietvoicetts.client.TTSEngine')
     def test_synthesize_to_file(self, mock_tts_engine):
         # Arrange
         mock_engine_instance = MagicMock()

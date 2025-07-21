@@ -18,7 +18,8 @@ class AudioProcessor:
         if isinstance(path_or_bytes, str):
             if not Path(path_or_bytes).exists():
                 raise FileNotFoundError(f"Audio file not found: {path_or_bytes}")
-            audio_segment = AudioSegment.from_file(path_or_bytes).set_channels(1).set_frame_rate(sample_rate)
+            with open(path_or_bytes, "rb") as f:
+                audio_segment = AudioSegment.from_file(f).set_channels(1).set_frame_rate(sample_rate)
         else:
             audio_segment = AudioSegment.from_file(io.BytesIO(path_or_bytes)).set_channels(1).set_frame_rate(sample_rate)
         audio = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)

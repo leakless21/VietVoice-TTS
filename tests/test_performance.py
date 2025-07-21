@@ -6,7 +6,7 @@ import unittest
 import time
 from unittest.mock import patch, MagicMock
 import numpy as np
-from vietvoicetts.api import TTSApi
+from vietvoicetts.client import TTSApi
 from vietvoicetts.core.model_config import ModelConfig
 
 
@@ -148,7 +148,8 @@ class TestPerformance(unittest.TestCase):
         print(f"  Created 100 configs in {creation_time:.3f}s")
         print(f"  Performed 100 dict operations in {operation_time:.3f}s")
     
-    def _setup_performance_mocks(self, mock_audio_proc, mock_text_proc, mock_model_mgr):
+    @staticmethod
+    def _setup_performance_mocks(mock_audio_proc, mock_text_proc, mock_model_mgr):
         """Setup mocks optimized for performance testing"""
         # Setup model session manager
         mock_model_mgr_instance = mock_model_mgr.return_value
@@ -214,7 +215,7 @@ class TestStressTests(unittest.TestCase):
     def _setup_stress_mocks(self, mock_audio_proc, mock_text_proc, mock_model_mgr):
         """Setup mocks for stress testing"""
         # Reuse performance mock setup
-        TestPerformance._setup_performance_mocks(self, mock_audio_proc, mock_text_proc, mock_model_mgr)
+        TestPerformance._setup_performance_mocks(mock_audio_proc, mock_text_proc, mock_model_mgr)
 
 
 if __name__ == '__main__':

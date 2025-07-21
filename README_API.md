@@ -1,0 +1,67 @@
+# VietVoice TTS API Documentation
+
+## Endpoints
+
+| Path                      | Method | Description                | Parameters                                                                                                                                                |
+| ------------------------- | ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/v1/health`          | GET    | Service health check       | None                                                                                                                                                      |
+| `/api/v1/synthesize`      | POST   | Stream audio bytes         | `text` (str, required), `speed` (float, optional), `output_format` (str, default "wav"), `gender` (enum), `group` (enum), `area` (enum), `emotion` (enum) |
+| `/api/v1/synthesize/file` | POST   | Generate downloadable file | Same as /synthesize                                                                                                                                       |
+| `/api/v1/download/{id}`   | GET    | Download generated file    | `id` (str)                                                                                                                                                |
+
+### Synthesis Parameters
+
+- **text** (`string`, required): Text to synthesize (max 500 characters).
+- **speed** (`float`, optional): Speech speed (default: 0.9, range: 0.25–2.0).
+- **output_format** (`string`, optional): Output audio format (default: `"wav"`).
+- **gender** (`enum`, optional): `"male"` or `"female"`.
+- **group** (`enum`, optional): `"story"`, `"news"`, `"audiobook"`, `"interview"`, `"review"`.
+- **area** (`enum`, optional): `"northern"`, `"southern"`, `"central"`.
+- **emotion** (`enum`, optional): `"neutral"`, `"serious"`, `"monotone"`, `"sad"`, `"surprised"`, `"happy"`, `"angry"`.
+
+## Example Request
+
+```bash
+curl -X POST http://localhost:8000/api/v1/synthesize/file \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Xin chào thế giới",
+    "speed": 1.0,
+    "gender": "female",
+    "group": "news",
+    "area": "northern",
+    "emotion": "happy"
+  }'
+```
+
+## Response Formats
+
+- `/synthesize`: Streams audio bytes (Content-Type: audio/wav)
+- `/synthesize/file`: Returns JSON:
+  ```json
+  {
+    "download_url": "/api/v1/download/abc123def4",
+    "duration_seconds": 2.13,
+    "sample_rate": 24000,
+    "format": "wav",
+    "file_size_bytes": 123456
+  }
+  ```
+- `/download/{id}`: Returns audio file (Content-Type: audio/wav)
+
+## Error Handling
+
+- 400: Invalid request parameters (e.g., invalid enum value)
+- 404: File not found
+- 500: Internal server error
+
+## Authentication
+
+No authentication is required for any endpoint.
+
+## Enum Reference
+
+- **gender**: `"male"`, `"female"`
+- **group**: `"story"`, `"news"`, `"audiobook"`, `"interview"`, `"review"`
+- **area**: `"northern"`, `"southern"`, `"central"`
+- **emotion**: `"neutral"`, `"serious"`, `"monotone"`, `"sad"`, `"surprised"`, `"happy"`, `"angry"`

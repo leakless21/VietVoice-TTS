@@ -39,6 +39,13 @@ dependencies = [
     "tqdm>=4.64.0",
     "loguru>=0.7.3",
     "onnxruntime-gpu>=1.20.2",
+    "aiofiles>=24.1.0",
+    "pydantic>=2.10.6",
+    "litestar[standard]>=2.16.0",
+    "python-multipart>=0.0.20",
+    "requests>=2.32.4",
+    "anyio>=4.5.2",
+    "pydantic-settings>=2.8.1",
 ]
 
 [project.optional-dependencies]
@@ -108,3 +115,8 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short" 
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=0.24.0",
+]

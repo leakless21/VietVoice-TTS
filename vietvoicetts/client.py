@@ -5,7 +5,7 @@ High-level API for VietVoice TTS
 import tempfile
 import os
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Literal
 import numpy as np
 
 from .core import ModelConfig, TTSEngine
@@ -38,7 +38,7 @@ class TTSApi:
             self._engine = TTSEngine(self.config)
         return self._engine
     
-    def synthesize(self, text: str, 
+    def synthesize(self, text: str,
                    gender: Optional[str] = None,
                    group: Optional[str] = None,
                    area: Optional[str] = None,
@@ -58,6 +58,8 @@ class TTSApi:
         Returns:
             Tuple of (generated_audio_array, generation_time_seconds)
         """
+        if text is None:
+            raise ValueError("Text cannot be None")
         return self.engine.synthesize(
             text=text,
             gender=gender,
@@ -90,11 +92,11 @@ class TTSApi:
         """
         _, generation_time = self.synthesize(
             text=text,
+            output_path=output_path,
             gender=gender,
             group=group,
             area=area,
             emotion=emotion,
-            output_path=output_path,
             reference_audio=reference_audio,
             reference_text=reference_text
         )
@@ -201,10 +203,10 @@ def synthesize(text: str,
 
 
 def synthesize_to_bytes(text: str,
-                        gender: Optional[str] = None,
+                        gender: Optional[str] = "female",
                         group: Optional[str] = None,
                         area: Optional[str] = None,
-                        emotion: Optional[str] = None,
+                        emotion: Optional[str] = "neutral",
                         reference_audio: Optional[str] = None,
                         reference_text: Optional[str] = None,
                         config: Optional[ModelConfig] = None) -> Tuple[bytes, float]:

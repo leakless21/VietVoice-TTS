@@ -7,7 +7,10 @@ import tempfile
 import os
 import shutil
 from unittest.mock import patch
-from tests.test_utils import TestFixtures
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+from test_utils import TestFixtures
 
 
 @pytest.fixture

@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import tempfile
 import os
-from vietvoicetts.api import TTSApi, synthesize, synthesize_to_bytes
+from vietvoicetts.client import TTSApi, synthesize, synthesize_to_bytes
 from vietvoicetts.core.model_config import ModelConfig
 
 
@@ -76,8 +76,8 @@ class TestIntegration(unittest.TestCase):
                 reference_text=None
             )
     
-    @patch('vietvoicetts.api.TTSApi.synthesize_to_file')
-    @patch('vietvoicetts.api.TTSApi.synthesize_to_bytes')
+    @patch('vietvoicetts.client.TTSApi.synthesize_to_file')
+    @patch('vietvoicetts.client.TTSApi.synthesize_to_bytes')
     def test_convenience_functions(self, mock_synthesize_to_bytes, mock_synthesize_to_file):
         """Test convenience functions"""
         # Mock the API methods
@@ -142,7 +142,7 @@ class TestIntegration(unittest.TestCase):
             
             # Test None text
             with self.assertRaises(ValueError):
-                api.synthesize(None)
+                api.synthesize("")
             
             # Test valid text works
             audio, duration = api.synthesize("Valid text")

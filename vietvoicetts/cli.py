@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, Union
 
 from .core import ModelConfig
 from .core.model_config import MODEL_GENDER, MODEL_GROUP, MODEL_AREA, MODEL_EMOTION
-from .api import TTSApi
+from .client import TTSApi
 
 
 # ANSI color codes for rich formatting
@@ -206,8 +206,9 @@ def get_required_inputs() -> Dict[str, Any]:
         print(f"{Colors.RED}❌ Text cannot be empty.{Colors.RESET}")
         text = input(f"{Colors.GREEN}Enter text to synthesize: {Colors.RESET}").strip()
     
+    default_output_folder = "output"
     default_filename = "output"
-    output = input(f"{Colors.GREEN}Enter output filename (default: {default_filename}.wav): {Colors.RESET}").strip()
+    output = input(f"{Colors.GREEN}Enter output filename (default: {default_filename}.wav, folder: {default_output_folder}/): {Colors.RESET}").strip()
     if not output:
         output = default_filename
     
@@ -217,10 +218,10 @@ def get_required_inputs() -> Dict[str, Any]:
 def get_default_settings() -> Dict[str, Any]:
     """Get default settings for optional parameters"""
     return {
-        'gender': None,
+        'gender': "female",
         'group': None,
-        'area': None,
-        'emotion': None,
+        'area': "northern",
+        'emotion': "neutral",
         'reference_audio': None,
         'reference_text': None,
         'speed': 0.9,
