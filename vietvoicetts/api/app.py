@@ -15,6 +15,9 @@ from loguru import logger
 from .schemas import HealthResponse, SynthesizeRequest, SynthesizeFileResponse
 from .tts_engine import synthesize_async
 
+# Import deterministic module to freeze all random seeds
+import vietvoicetts.deterministic
+
 # --- Application State ---
 # Create a temporary directory for audio files that is cleaned up on system reboot.
 TMP_DIR = settings.TMP_DIR_PATH 

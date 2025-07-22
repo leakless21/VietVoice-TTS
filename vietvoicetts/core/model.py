@@ -182,7 +182,7 @@ class ModelSessionManager:
             if len(available_samples) == 0:
                 sample, sample_idx = self.sample_metadata[0], 0
             else:
-                sample, sample_idx = random.choice(available_samples)
+                sample, sample_idx = available_samples[0]
 
             logger.info(f"Selected sample #{sample_idx} with gender: {sample['gender']}, group: {sample['group']}, area: {sample['area']}, emotion: {sample['emotion']}")
 

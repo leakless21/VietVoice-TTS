@@ -20,7 +20,9 @@
 - **emotion** (`enum`, optional): `"neutral"`, `"serious"`, `"monotone"`, `"sad"`, `"surprised"`, `"happy"`, `"angry"`.
 
 ## Example Request
-
+```
+uvicorn vietvoicetts.api:app --host 0.0.0.0 --port 8000 --reload
+```
 ```bash
 curl -X POST http://localhost:8000/api/v1/synthesize/file \
   -H "Content-Type: application/json" \

@@ -68,7 +68,7 @@ async def synthesize_async(
 
         # The `run_sync` function takes our blocking `synthesize_to_bytes` call
         # and runs it in a background thread, awaiting the result.
-        audio_bytes, _ = await to_thread.run_sync(
+        result = await to_thread.run_sync(
             engine.synthesize_to_bytes,
             text,
             gender.value if gender else None,
@@ -76,6 +76,7 @@ async def synthesize_async(
             area.value if area else None,
             emotion.value if emotion else None,
         )
+        audio_bytes, _ = result
 
         # Restore the original speed for the next request.
         engine.config.speed = original_speed

@@ -1,200 +1,188 @@
-# VietVoice-TTS
+# VietVoice-TTS Litestar API
 
-A Vietnamese Text-to-Speech library that provides high-quality speech synthesis with voice cloning capabilities.
+![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)
+![Framework](https://img.shields.io/badge/framework-Litestar-purple)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Features
+This repository contains a high-performance, asynchronous REST API for serving the [VietVoice-TTS](https://github.com/v-nhandt/VietVoice-TTS) model. It is built with the modern Litestar web framework to provide a fast, reliable, and easy-to-use interface for text-to-speech synthesis.
 
-- 🎯 **High-quality Vietnamese TTS** - Natural-sounding speech synthesis
-- 🔊 **Multiple voice options** - Gender, accent, emotion, and style variations
-- 🎭 **Voice cloning** - Clone voices using reference audio
-- 📱 **Dual interfaces** - Both CLI and Python API
-- 🔄 **Chunk processing** - Handle long texts efficiently
+## Key Features
 
-## Live Demo
+- **High-Performance & Asynchronous:** Built on Litestar and Uvicorn, capable of handling many concurrent requests without blocking.
+- **Multiple Synthesis Patterns:**
+  - **Direct Download:** A simple, one-step endpoint for scripts and direct file downloads.
+  - **Inline Playback:** An endpoint designed for embedding audio directly in web applications.
+  - **Asynchronous Job Pattern:** A two-step process to generate a file and provide a stable URL, ideal for long-running tasks and complex UIs.
+- **Full Voice Customization:** Control the voice's `gender`, `area` (accent), `group`, and `emotion` through simple API parameters.
+- **Robust and Self-Documenting:** Uses Pydantic for automatic request validation and can generate OpenAPI (Swagger/Redoc) documentation.
+- **Production-Ready Design:** Includes patterns for configuration management, background tasks, and a clear path to production-grade features like caching and containerization.
 
-Try VietVoice TTS online with our interactive Gradio interface before installing the library:
+## Technology Stack
 
-**🌐 [VietVoice TTS/](https://demo.nguyenbinh.dev/tts)**
+- **Web Framework:** [Litestar](https://litestar.dev/)
+- **ASGI Server:** [Uvicorn](https://www.uvicorn.org/)
+- **Data Validation:** [Pydantic](https://docs.pydantic.dev/)
+- **Core TTS Library:** [VietVoice-TTS](https://github.com/v-nhandt/VietVoice-TTS)
 
-The demo allows you to:
-- Test different voice options (gender, accent, emotion, style)
-- Try voice cloning with your own reference audio
-- Experience the quality and capabilities without any setup
-- Generate sample audio files to evaluate the results
+---
 
-NOTE: The demo link is temporary and may change or be disabled at any time. You can also try our [colab](https://colab.research.google.com/drive/1iBxTDeyyeuNoaMBoVR3iTXDSrapbR_oc?usp=sharing), which is more stable.
+## Getting Started
 
-## Installation
+Follow these instructions to get the API running on your local machine.
 
-### Install from Source
+### 1. Prerequisites
 
-Since this package is not yet published on PyPI, you need to install it from source:
+- Python 3.10 or newer.
+- [Git](https://git-scm.com/) for cloning the repository.
+- It is highly recommended to use `uv` for fast dependency management.
+
+    ```bash
+    pip install uv
+    ```
+
+### 2. Installation
+
+1. **Clone the repository:**
+
+    ```bash
+    git clone <your-repository-url>
+    cd <your-repository-directory>
+    ```
+
+2. **Create and activate a virtual environment:**
+
+    ```bash
+    uv venv .venv
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    ```
+
+3. **Install all required dependencies:**
+    This command installs both the API requirements and the core `vietvoicetts` library's dependencies.
+
+    ```bash
+    uv pip install -r requirements-api.txt
+    pip install -e .
+    ```
+
+### 3. Running the API Locally
+
+Start the development server using Uvicorn:
 
 ```bash
-# Clone the repository
-git clone https://github.com/nguyenvulebinh/VietVoice-TTS.git
-cd VietVoice-TTS
-
-# Install with GPU support (recommended if you have CUDA)
-pip install -e ".[gpu]"
-
-# OR install with CPU support (for systems without GPU)
-pip install -e ".[cpu]"
+uvicorn vietvoicetts.api:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Important**: You must choose either `[gpu]` or `[cpu]` - the base installation without extras will not include ONNX Runtime and will not work.
+- `--reload`: Enables auto-reload, so the server will restart automatically when you change the code.
 
-## Quick Start
+On the first run, the server will take a few moments to start as it downloads the TTS model file into the `models/` directory. Subsequent startups will be much faster.
 
-### Command Line Interface
+Once running, the API will be available at `http://localhost:8000`.
+
+---
+
+## API Usage
+
+You can interact with the running API using any HTTP client, such as `curl`.
+
+### **Recommended: Direct Download (One-Step)**
+
+This is the simplest way to get an audio file. It's ideal for scripts and automation.
+
+**Endpoint:** `POST /api/v1/synthesize/download`
+
+**Example:**
 
 ```bash
-# Basic usage
-python -m vietvoicetts "Xin chào các bạn! Đây là ví dụ cơ bản về tổng hợp giọng nói tiếng Việt." output.wav
-
-# With voice options
-python -m vietvoicetts "Xin chào các bạn! Đây là ví dụ cơ bản về tổng hợp giọng nói tiếng Việt." output.wav --gender female --area northern
-
-# Voice cloning with reference audio
-python -m vietvoicetts "Xin chào các bạn! Đây là ví dụ cơ bản về tổng hợp giọng nói tiếng Việt." output.wav --reference-audio examples/sample.m4a --reference-text "Xin chào các anh chị và các bạn. Chào mừng các anh chị đến với podcast Hiếu TV. Trước khi bắt đầu, dành cho anh chị nào mới lần đầu đến podcast này."
+curl -X POST http://localhost:8000/api/v1/synthesize/download \
+-H "Content-Type: application/json" \
+-d '{
+  "text": "Tệp này đã được tải xuống trực tiếp.",
+  "gender": "female",
+  "area": "southern"
+}' \
+-o direct_download.wav
 ```
 
-### Python API
+This command will synthesize the text with a southern female voice and save the result directly to `direct_download.wav`.
 
-### Basic Text-to-Speech
-```python
-from vietvoicetts import synthesize
+### **For UIs: Asynchronous Generation (Two-Step)**
 
-# Simple synthesis
-duration = synthesize("Xin chào các bạn! Đây là ví dụ cơ bản về tổng hợp giọng nói tiếng Việt.", "greeting.wav")
-print(f"Generated audio: {duration:.2f} seconds")
+This pattern is best for web applications or long synthesis tasks, as it doesn't lock up the initial request.
+
+**Step 1: Request the File Generation**
+
+**Endpoint:** `POST /api/v1/synthesize/file`
+
+```bash
+curl -X POST http://localhost:8000/api/v1/synthesize/file \
+-H "Content-Type: application/json" \
+-d '{"text": "Đây là một quy trình hai bước."}'
 ```
 
-### Voice Customization
-```python
-from vietvoicetts import synthesize
+The server will immediately respond with JSON containing a download URL:
 
-# Female voice with northern accent and happy emotion
-duration = synthesize(
-    "Xin chào các bạn! Đây là ví dụ cơ bản về tổng hợp giọng nói tiếng Việt.",
-    "welcome.wav",
-    gender="female",
-    area="northern",
-)
+```json
+{
+  "download_url": "/api/v1/download/a1b2c3d4e5",
+  "duration_seconds": 1.78,
+  "sample_rate": 24000,
+  ...
+}
 ```
 
-### Voice Cloning
-```python
-from vietvoicetts import synthesize
+**Step 2: Download the Generated File**
 
-# Clone voice from reference audio
-duration = synthesize(
-    "Đây là giọng nói được nhân bản từ tệp âm thanh tham chiếu",
-    "cloned_voice.wav",
-    reference_audio="examples/sample.m4a",
-    reference_text="Xin chào các anh chị và các bạn. Chào mừng các anh chị đến với podcast Hiếu TV. Trước khi bắt đầu, dành cho anh chị nào mới lần đầu đến podcast này."
-)
+**Endpoint:** `GET /api/v1/download/{file_id}`
+
+Use the `file_id` from the previous step to download the file.
+
+```bash
+# Replace 'a1b2c3d4e5' with the ID you received
+curl http://localhost:8000/api/v1/download/a1b2c3d4e5 -o two_step_result.wav
 ```
 
-### Custom Configuration
-```python
-from vietvoicetts import TTSApi, ModelConfig
+### **For Web Playback: Inline Audio**
 
-# Custom model configuration
-config = ModelConfig(
-    speed=1.2,
-    random_seed=12345
-)
+This endpoint is designed to be used in an HTML `<audio>` tag for immediate playback in a browser.
 
-api = TTSApi(config)
-duration = api.synthesize_to_file("Xin chào các bạn! Đây là ví dụ cơ bản về tổng hợp giọng nói tiếng Việt.", "custom.wav")
+**Endpoint:** `POST /api/v1/synthesize`
+
+### **Health Check**
+
+Verify that the service is running and get its uptime.
+
+**Endpoint:** `GET /api/v1/health`
+
+```bash
+curl http://localhost:8000/api/v1/health
 ```
 
-## Voice Configuration
+---
 
-### Gender Options
-- `male` - Male voice
-- `female` - Female voice
+## Configuration
 
-### Area/Accent Options
-- `northern` - Northern Vietnamese accent
-- `southern` - Southern Vietnamese accent  
-- `central` - Central Vietnamese accent
+Application settings can be configured using environment variables or a `.env` file in the project root.
 
-### Group/Style Options
-- `story` - Storytelling style
-- `news` - News reading style
-- `audiobook` - Audiobook narration style
-- `interview` - Interview/conversation style
-- `review` - Review/commentary style
+**Example `.env` file:**
 
-### Emotion Options
-- `neutral` - Neutral emotion (default)
-- `serious` - Serious tone
-- `monotone` - Monotone delivery
-- `sad` - Sad emotion
-- `surprised` - Surprised tone
-- `happy` - Happy emotion
-- `angry` - Angry emotion
+```
+# You can override the default temporary directory path
+# TMP_DIR_PATH="/path/to/your/custom/cache"
+```
 
-## CLI Parameters
+Refer to `vietvoicetts/api/settings.py` for all available configuration options.
 
-### Required Arguments
-- `text` - Text to synthesize
-- `output` - Output audio file path
+## Path to Production
 
-### Voice Selection
-- `--gender` - Voice gender (male/female)
-- `--group` - Voice group/style (story/news/audiobook/interview/review)
-- `--area` - Voice area/accent (northern/southern/central)
-- `--emotion` - Voice emotion (neutral/serious/monotone/sad/surprised/happy/angry)
+This API is a solid foundation. To make it fully production-grade, consider the following improvements:
 
-### Reference Audio (Voice Cloning)
-- `--reference-audio` - Path to reference audio file
-- `--reference-text` - Text corresponding to reference audio
-
-### Audio Processing
-- `--speed` - Speech speed multiplier (default: 1.0)
-- `--cross-fade-duration` - Cross-fade duration in seconds (default: 0.1)
-
-### Advanced Options
-- `--random-seed` - Random seed for consistent voice generation (default: 9527)
-
-
-## Disclaimer
-
-By using VietVoice TTS, you agree to the following terms:
-
-**Content Responsibility:**
-- Users are solely responsible for all generated content and its usage
-- Do not use this library to create content that infringes on third-party intellectual property rights
-- Do not generate content that violates applicable laws or regulations
-
-**Voice Cloning Ethics:**
-- Only use reference audio that you own or have explicit permission to use
-- Respect the rights and consent of individuals whose voices may be cloned
-- Clearly indicate when content has been generated using AI voice synthesis
-
-**Liability:**
-- The authors and contributors are not liable for any damages or legal issues arising from the use of this software
-- Users assume full responsibility for their use of the generated content
-
-**Attribution:**
-- When sharing AI-generated content, clearly indicate that it was created using VietVoice TTS
-- Provide appropriate attribution to this project when redistributing or building upon this work
-
-## Requirements
-
-- Python 3.7+
-- ONNX Runtime
-- pydub
-- soundfile
-- numpy
+- [ ] **Automated File Cleanup:** Implement background tasks to periodically delete old audio files from the temporary directory.
+- [ ] **Persistent Caching:** Replace the in-memory file cache with a shared, persistent cache like Redis to support multiple server workers and survive restarts.
+- [ ] **Containerization:** Package the application and its dependencies into a Docker image for consistent and scalable deployments.
+- [ ] **Security Hardening:** Implement rate limiting, CORS policies, and other security best practices.
+- [ ] **MP3 Support:** Add an optional `mp3` output format by integrating FFmpeg for on-the-fly audio conversion.
+- [ ] **Observability:** Add structured logging, Prometheus metrics, and distributed tracing to monitor API performance and health.
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions, please visit the [GitHub repository](https://github.com/nguyenvulebinh/VietVoice-TTS).
+This project is licensed under the MIT License. See the `LICENSE` file for details.

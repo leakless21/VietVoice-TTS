@@ -120,7 +120,11 @@ class TTSApi:
         Returns:
             Tuple of (wav_bytes, generation_time_seconds)
         """
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+        # Local import to avoid circular dependency with `vietvoicetts.api.tts_engine`
+        from vietvoicetts.api.settings import settings as api_settings  # pylint: disable=import-outside-toplevel
+
+        with tempfile.NamedTemporaryFile(
+                suffix='.wav', delete=False, dir=api_settings.TMP_DIR_PATH) as tmp_file:
             tmp_path = tmp_file.name
         
         try:
@@ -203,10 +207,10 @@ def synthesize(text: str,
 
 
 def synthesize_to_bytes(text: str,
-                        gender: Optional[str] = "female",
+                        gender: Optional[str] = None,
                         group: Optional[str] = None,
                         area: Optional[str] = None,
-                        emotion: Optional[str] = "neutral",
+                        emotion: Optional[str] = None,
                         reference_audio: Optional[str] = None,
                         reference_text: Optional[str] = None,
                         config: Optional[ModelConfig] = None) -> Tuple[bytes, float]:

@@ -333,16 +333,15 @@ class TestTTSEngineIntegration:
         mock_tts_api.assert_called_once_with(_engine_config)
 
     @patch('vietvoicetts.api.tts_engine.get_tts_engine')
-    @patch('vietvoicetts.api.tts_engine.to_thread')
     @pytest.mark.asyncio
-    async def test_synthesize_async_parameter_conversion(self, mock_to_thread, mock_get_engine):
+    async def test_synthesize_async_parameter_conversion(self, mock_get_engine):
         """Test that synthesize_async properly converts enum parameters"""
         # Setup mocks
         mock_engine = MagicMock()
         mock_engine.config.speed = 1.0
         mock_engine.config.sample_rate = 22050
+        mock_engine.synthesize_to_bytes.return_value = (b"test_audio", None)
         mock_get_engine.return_value = mock_engine
-        mock_to_thread.run_sync.return_value = (b"test_audio", None)
         
         # Call with enum parameters
         result = await synthesize_async(
@@ -359,30 +358,28 @@ class TestTTSEngineIntegration:
         assert audio_bytes == b"test_audio"
         assert sample_rate == 22050
         
-        # Verify to_thread.run_sync was called with correct parameters
-        mock_to_thread.run_sync.assert_called_once()
-        call_args = mock_to_thread.run_sync.call_args
+        # Verify synthesize_to_bytes was called with correct parameters
+        mock_engine.synthesize_to_bytes.assert_called_once()
+        call_args = mock_engine.synthesize_to_bytes.call_args
         
         # Check that enum values were converted to strings
         args = call_args[0]
-        assert args[0] == mock_engine.synthesize_to_bytes  # The method
-        assert args[1] == "Test text"  # text parameter
-        assert args[2] == "male"  # gender.value
-        assert args[3] == "story"  # group.value
-        assert args[4] == "central"  # area.value
-        assert args[5] == "angry"  # emotion.value
+        assert args[0] == "Test text"  # text parameter
+        assert args[1] == "male"  # gender.value
+        assert args[2] == "story"  # group.value
+        assert args[3] == "central"  # area.value
+        assert args[4] == "angry"  # emotion.value
 
     @patch('vietvoicetts.api.tts_engine.get_tts_engine')
-    @patch('vietvoicetts.api.tts_engine.to_thread')
     @pytest.mark.asyncio
-    async def test_synthesize_async_none_parameters(self, mock_to_thread, mock_get_engine):
+    async def test_synthesize_async_none_parameters(self, mock_get_engine):
         """Test synthesize_async with None enum parameters"""
         # Setup mocks
         mock_engine = MagicMock()
         mock_engine.config.speed = 1.0
         mock_engine.config.sample_rate = 22050
+        mock_engine.synthesize_to_bytes.return_value = (b"test_audio", None)
         mock_get_engine.return_value = mock_engine
-        mock_to_thread.run_sync.return_value = (b"test_audio", None)
         
         # Call with None parameters
         result = await synthesize_async(
@@ -394,15 +391,15 @@ class TestTTSEngineIntegration:
             emotion=None
         )
         
-        # Verify to_thread.run_sync was called with None values
-        mock_to_thread.run_sync.assert_called_once()
-        call_args = mock_to_thread.run_sync.call_args
+        # Verify synthesize_to_bytes was called with None values
+        mock_engine.synthesize_to_bytes.assert_called_once()
+        call_args = mock_engine.synthesize_to_bytes.call_args
         args = call_args[0]
         
-        assert args[2] is None  # gender
-        assert args[3] is None  # group
-        assert args[4] is None  # area
-        assert args[5] is None  # emotion
+        assert args[1] is None  # gender
+        assert args[2] is None  # group
+        assert args[3] is None  # area
+        assert args[4] is None  # emotion
 
 
 class TestAPIErrorScenarios:
