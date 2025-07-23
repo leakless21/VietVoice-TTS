@@ -191,6 +191,7 @@ class TTSEngine:
                    group: Optional[str] = None,
                    area: Optional[str] = None,
                    emotion: Optional[str] = None,
+                   sample_iteration: Optional[int] = None,
                    output_path: Optional[str] = None,
                    reference_audio: Optional[str] = None,
                    reference_text: Optional[str] = None) -> Tuple[np.ndarray, float]:
@@ -199,16 +200,23 @@ class TTSEngine:
         
         Args:
             text: Target text to synthesize
+            gender: Voice gender filter
+            group: Voice group filter
+            area: Voice area filter
+            emotion: Voice emotion filter
+            sample_iteration: Which iteration of available samples to use (0-based)
+            output_path: Path to save the generated audio (optional)
             reference_audio: Path to reference audio file (optional, uses default if not provided)
             reference_text: Reference text matching the reference audio (optional, uses default if not provided)
-            output_path: Path to save the generated audio (optional)
             
         Returns:
             Tuple of (generated_audio, generation_time)
         """
         start_time = time.time()
         
-        ref_audio, ref_text = self.model_session_manager.select_sample(gender, group, area, emotion, reference_audio, reference_text)
+        ref_audio, ref_text = self.model_session_manager.select_sample(
+            gender, group, area, emotion, sample_iteration, reference_audio, reference_text
+        )
         
         try:
             inputs_list = self._prepare_inputs(ref_audio, ref_text, text)

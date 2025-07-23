@@ -50,6 +50,10 @@ class ModelConfig:
 
     def __post_init__(self):
         """Post-initialization validation"""
+        if not 0.1 <= self.speed <= 5.0:
+            raise ValueError("Speed must be between 0.1 and 5.0")
+        if not 1 <= self.nfe_step <= 100:
+            raise ValueError("NFE step must be between 1 and 100")
         self.validate_paths()
     
     @property

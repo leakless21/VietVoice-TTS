@@ -43,6 +43,7 @@ class TTSApi:
                    group: Optional[str] = None,
                    area: Optional[str] = None,
                    emotion: Optional[str] = None,
+                   sample_iteration: Optional[int] = None,
                    output_path: Optional[str] = None,
                    reference_audio: Optional[str] = None,
                    reference_text: Optional[str] = None) -> Tuple[np.ndarray, float]:
@@ -51,9 +52,14 @@ class TTSApi:
         
         Args:
             text: Text to synthesize
+            gender: Voice gender filter
+            group: Voice group filter
+            area: Voice area filter
+            emotion: Voice emotion filter
+            sample_iteration: Which iteration of available samples to use (0-based)
+            output_path: Path to save the generated audio (optional)
             reference_audio: Path to reference audio file (optional)
             reference_text: Reference text matching the reference audio (optional)
-            output_path: Path to save the generated audio (optional)
             
         Returns:
             Tuple of (generated_audio_array, generation_time_seconds)
@@ -66,6 +72,7 @@ class TTSApi:
             group=group,
             area=area,
             emotion=emotion,
+            sample_iteration=sample_iteration,
             output_path=output_path,
             reference_audio=reference_audio,
             reference_text=reference_text
@@ -76,6 +83,7 @@ class TTSApi:
                            group: Optional[str] = None,
                            area: Optional[str] = None,
                            emotion: Optional[str] = None,
+                           sample_iteration: Optional[int] = None,
                            reference_audio: Optional[str] = None,
                            reference_text: Optional[str] = None) -> float:
         """
@@ -84,22 +92,31 @@ class TTSApi:
         Args:
             text: Text to synthesize
             output_path: Path to save the generated audio
+            gender: Voice gender filter
+            group: Voice group filter
+            area: Voice area filter
+            emotion: Voice emotion filter
+            sample_iteration: Which iteration of available samples to use (0-based)
             reference_audio: Path to reference audio file (optional)
             reference_text: Reference text matching the reference audio (optional)
             
         Returns:
             Generation time in seconds
         """
-        _, generation_time = self.synthesize(
+        result = self.synthesize(
             text=text,
             output_path=output_path,
             gender=gender,
             group=group,
             area=area,
             emotion=emotion,
+            sample_iteration=sample_iteration,
             reference_audio=reference_audio,
             reference_text=reference_text
         )
+        if result is None:
+            return 0.0
+        _, generation_time = result
         return generation_time
     
     def synthesize_to_bytes(self, text: str,
@@ -107,6 +124,7 @@ class TTSApi:
                            group: Optional[str] = None,
                            area: Optional[str] = None,
                            emotion: Optional[str] = None,
+                           sample_iteration: Optional[int] = None,
                            reference_audio: Optional[str] = None,
                            reference_text: Optional[str] = None) -> Tuple[bytes, float]:
         """
@@ -114,6 +132,11 @@ class TTSApi:
         
         Args:
             text: Text to synthesize
+            gender: Voice gender filter
+            group: Voice group filter
+            area: Voice area filter
+            emotion: Voice emotion filter
+            sample_iteration: Which iteration of available samples to use (0-based)
             reference_audio: Path to reference audio file (optional)
             reference_text: Reference text matching the reference audio (optional)
             
@@ -135,6 +158,7 @@ class TTSApi:
                 group=group,
                 area=area,
                 emotion=emotion,
+                sample_iteration=sample_iteration,
                 reference_audio=reference_audio,
                 reference_text=reference_text
             )
@@ -173,6 +197,7 @@ def synthesize(text: str,
                group: Optional[str] = None,
                area: Optional[str] = None,
                emotion: Optional[str] = None,
+               sample_iteration: Optional[int] = None,
                reference_audio: Optional[str] = None,
                reference_text: Optional[str] = None,
                config: Optional[ModelConfig] = None) -> float:
@@ -186,6 +211,7 @@ def synthesize(text: str,
         group: Voice group - optional
         area: Voice area - optional
         emotion: Voice emotion - optional
+        sample_iteration: Which iteration of available samples to use (0-based) - optional
         reference_audio: Path to reference audio file - optional
         reference_text: Reference text matching the audio - optional
         config: ModelConfig instance (optional)
@@ -201,6 +227,7 @@ def synthesize(text: str,
         group=group,
         area=area,
         emotion=emotion,
+        sample_iteration=sample_iteration,
         reference_audio=reference_audio,
         reference_text=reference_text
     )
@@ -211,6 +238,7 @@ def synthesize_to_bytes(text: str,
                         group: Optional[str] = None,
                         area: Optional[str] = None,
                         emotion: Optional[str] = None,
+                        sample_iteration: Optional[int] = None,
                         reference_audio: Optional[str] = None,
                         reference_text: Optional[str] = None,
                         config: Optional[ModelConfig] = None) -> Tuple[bytes, float]:
@@ -223,6 +251,7 @@ def synthesize_to_bytes(text: str,
         group: Voice group - optional
         area: Voice area - optional
         emotion: Voice emotion - optional
+        sample_iteration: Which iteration of available samples to use (0-based) - optional
         reference_audio: Path to reference audio file - optional
         reference_text: Reference text matching the audio - optional
         config: ModelConfig instance (optional)
@@ -237,6 +266,7 @@ def synthesize_to_bytes(text: str,
         group=group,
         area=area,
         emotion=emotion,
+        sample_iteration=sample_iteration,
         reference_audio=reference_audio,
         reference_text=reference_text
     ) 

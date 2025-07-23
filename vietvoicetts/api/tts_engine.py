@@ -38,6 +38,7 @@ async def synthesize_async(
     group: Group | None,
     area: Area | None,
     emotion: Emotion | None,
+    sample_iteration: int | None,
 ) -> tuple[bytes, int, float]:
     """
     Asynchronously synthesizes text to audio bytes.
@@ -52,6 +53,7 @@ async def synthesize_async(
         group: Filter by voice group.
         area: Filter by voice area.
         emotion: Filter by voice emotion.
+        sample_iteration: Which iteration of available samples to use (0-based).
 
     Returns:
         A tuple containing (audio_bytes, sample_rate, duration_seconds).
@@ -75,6 +77,7 @@ async def synthesize_async(
             group.value if group else None,
             area.value if area else None,
             emotion.value if emotion else None,
+            sample_iteration,
         )
         audio_bytes, _ = result
 

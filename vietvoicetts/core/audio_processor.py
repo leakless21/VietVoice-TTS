@@ -46,6 +46,9 @@ class AudioProcessor:
     @staticmethod
     def fix_clipped_audio(audio: np.ndarray) -> np.ndarray:
         """Fix clipped audio by reducing overall level"""
+        # Replace non-finite values with 0
+        audio = np.nan_to_num(audio, nan=0.0, posinf=0.0, neginf=0.0)
+
         # Check if audio is clipped
         max_val = np.max(np.abs(audio))
         if max_val >= 32767:
@@ -57,6 +60,8 @@ class AudioProcessor:
     @staticmethod
     def save_audio(audio: np.ndarray, file_path: str, sample_rate: int) -> None:
         """Save audio to file"""
+        if audio.size == 0:
+            raise ValueError("Cannot save empty audio.")
         output_dir = Path(file_path).parent
         output_dir.mkdir(parents=True, exist_ok=True)
         sf.write(file_path, audio.reshape(-1), sample_rate, format='WAVEX')

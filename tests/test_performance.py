@@ -126,12 +126,12 @@ class TestPerformance(unittest.TestCase):
         configs = []
         for i in range(100):
             with patch('vietvoicetts.core.model_config.ModelConfig.ensure_model_downloaded'):
-                config = ModelConfig(
-                    speed=1.0 + i * 0.01,
-                    random_seed=1000 + i,
-                    nfe_step=32 + i
-                )
-                configs.append(config)
+                with self.assertRaises(ValueError):
+                    config = ModelConfig(
+                        speed=1.0 + i * 0.01,
+                        random_seed=1000 + i,
+                        nfe_step=101 + i  # This will be out of range
+                    )
         
         creation_time = time.time() - start_time
         

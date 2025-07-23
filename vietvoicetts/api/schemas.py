@@ -67,6 +67,11 @@ class SynthesizeRequest(BaseModel):
     emotion: Optional[Emotion] = Field(
         None, description="Filter voice by emotion."
     )
+    sample_iteration: Optional[int] = Field(
+        None, 
+        ge=0, 
+        description="Choose which iteration of available samples to use (0-based index). If not specified, the first available sample is used."
+    )
 
 class SynthesizeFileResponse(BaseModel):
     """The response when requesting synthesis to a file."""

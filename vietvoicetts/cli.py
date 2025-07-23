@@ -10,6 +10,13 @@ from typing import Optional, Dict, Any, Union
 from .core import ModelConfig
 from .core.model_config import MODEL_GENDER, MODEL_GROUP, MODEL_AREA, MODEL_EMOTION
 from .client import TTSApi
+from .reference_samples import (
+    load_reference_samples,
+    filter_samples as _filter_reference_samples,
+    get_sample_path as _get_reference_sample_path,
+    play_sample as _play_reference_sample,
+    ReferenceSample,
+)
 
 
 # ANSI color codes for rich formatting
@@ -287,21 +294,46 @@ def edit_voice_selection(settings: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def edit_reference_audio(settings: Dict[str, Any]) -> Dict[str, Any]:
-    """Edit reference audio parameters"""
+    """Edit reference audio parameters.
+
+    Offers three modes:
+    1. Select from bundled reference samples (with preview).
+    2. Enter a custom path manually.
+    3. Clear existing reference audio.
+    """
+
     print(f"\n{Colors.CYAN}{Colors.BOLD}🎵 Reference Audio{Colors.RESET}")
-    
-    ref_audio = input(f"{Colors.GREEN}Reference audio path (current: {settings['reference_audio'] or 'None'}): {Colors.RESET}").strip()
-    if ref_audio:
-        settings['reference_audio'] = ref_audio
-    elif ref_audio == "" and settings['reference_audio']:
-        settings['reference_audio'] = None
-    
-    ref_text = input(f"{Colors.GREEN}Reference text (current: {settings['reference_text'] or 'None'}): {Colors.RESET}").strip()
-    if ref_text:
-        settings['reference_text'] = ref_text
-    elif ref_text == "" and settings['reference_text']:
-        settings['reference_text'] = None
-    
+
+    print("Options:")
+    print("  1. Choose from built-in samples")
+    print("  2. Enter custom path")
+    print("  0. Clear reference audio")
+
+    choice = input(f"{Colors.YELLOW}Select option [0-2]: {Colors.RESET}").strip()
+
+    if choice == "1":
+        selected = _browse_reference_samples()
+        if selected:
+            settings["reference_audio"] = str(_get_reference_sample_path(selected))
+            settings["reference_text"] = selected.text
+    elif choice == "2":
+        ref_audio = input(
+            f"{Colors.GREEN}Reference audio path (current: {settings.get('reference_audio') or 'None'}): {Colors.RESET}"
+        ).strip()
+        if ref_audio:
+            settings["reference_audio"] = ref_audio
+            # Ask for corresponding text
+            ref_text = input(
+                f"{Colors.GREEN}Reference text (current: {settings.get('reference_text') or 'None'}): {Colors.RESET}"
+            ).strip()
+            if ref_text:
+                settings["reference_text"] = ref_text
+        else:
+            print(f"{Colors.RED}❌ Path cannot be empty.{Colors.RESET}")
+    elif choice == "0":
+        settings["reference_audio"] = None
+        settings["reference_text"] = None
+
     return settings
 
 
@@ -367,6 +399,97 @@ def select_from_list(prompt: str, choices: list, current: Any) -> Optional[str]:
                 print(f"{Colors.RED}❌ Invalid choice. Please select 0-{len(choices)}.{Colors.RESET}")
         except ValueError:
             print(f"{Colors.RED}❌ Please enter a valid number.{Colors.RESET}")
+
+
+# ---------------------------------------------------------------------------
+# Built-in reference sample browser helpers
+# ---------------------------------------------------------------------------
+
+
+def _browse_reference_samples() -> Optional[ReferenceSample]:
+    """Interactive browser for bundled reference audio samples.
+
+    Returns the chosen ``ReferenceSample`` or ``None`` if the user cancels.
+    """
+
+    all_samples = load_reference_samples()
+    if not all_samples:
+        print(f"{Colors.RED}❌ No built-in reference samples found.{Colors.RESET}")
+        return None
+
+    # Active filters
+    filters = {"gender": None, "group": None, "area": None, "emotion": None}
+
+    while True:
+        # Apply filters
+        filtered = _filter_reference_samples(all_samples, **filters)
+
+        print(f"\n{Colors.CYAN}{Colors.BOLD}🎧 Reference Sample Browser{Colors.RESET}")
+        print("Filters:")
+        for k, v in filters.items():
+            print(f"  {k.capitalize():8}: {v if v else 'Any'}")
+
+        if not filtered:
+            print(f"{Colors.RED}No samples match current filters.{Colors.RESET}")
+        else:
+            print("\nMatching Samples (enter number to select, 'p<num>' to play):")
+            for idx, s in enumerate(filtered[:50], 1):
+                meta = f"{s.gender}/{s.group}/{s.area}/{s.emotion}"
+                preview = (s.text[:60] + "…") if len(s.text) > 60 else s.text
+                print(f"  {idx:2}. {s.filename:<40} | {meta:<40} | {preview}")
+            if len(filtered) > 50:
+                print(f"  … (+{len(filtered)-50} more) use filters to narrow list …")
+
+        print("\nOptions:")
+        print("  g – set gender filter     | a – set area filter")
+        print("  r – set group filter      | e – set emotion filter")
+        print("  c – clear all filters     | 0 – cancel and go back")
+
+        choice = input(f"{Colors.YELLOW}Enter choice: {Colors.RESET}").strip().lower()
+
+        # Cancel / back
+        if choice == "0":
+            return None
+
+        # Filter setters
+        if choice == "g":
+            filters["gender"] = select_from_list("Gender", [*MODEL_GENDER, "Any"], filters["gender"])
+            if filters["gender"] == "Any":
+                filters["gender"] = None
+            continue
+        if choice == "r":
+            filters["group"] = select_from_list("Group", [*MODEL_GROUP, "Any"], filters["group"])
+            if filters["group"] == "Any":
+                filters["group"] = None
+            continue
+        if choice == "a":
+            filters["area"] = select_from_list("Area", [*MODEL_AREA, "Any"], filters["area"])
+            if filters["area"] == "Any":
+                filters["area"] = None
+            continue
+        if choice == "e":
+            filters["emotion"] = select_from_list("Emotion", [*MODEL_EMOTION, "Any"], filters["emotion"])
+            if filters["emotion"] == "Any":
+                filters["emotion"] = None
+            continue
+
+        # Playback request e.g. "p3"
+        if choice.startswith("p") and choice[1:].isdigit():
+            idx = int(choice[1:]) - 1
+            if 0 <= idx < len(filtered):
+                _play_reference_sample(filtered[idx])
+            else:
+                print(f"{Colors.RED}Invalid sample index.{Colors.RESET}")
+            continue
+
+        # Selection by index
+        if choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(filtered):
+                return filtered[idx]
+            print(f"{Colors.RED}Invalid sample index.{Colors.RESET}")
+
+        # Unknown input → loop again
 
 
 def get_float_input(prompt: str, current: float, min_val: float, max_val: float) -> float:

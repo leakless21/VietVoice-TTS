@@ -53,6 +53,7 @@ async def synthesize_stream(data: SynthesizeRequest) -> Stream:
         group=data.group,
         area=data.area,
         emotion=data.emotion,
+        sample_iteration=data.sample_iteration,
     )
     
     return Stream(
@@ -76,6 +77,7 @@ async def synthesize_to_file(data: SynthesizeRequest) -> SynthesizeFileResponse:
         group=data.group,
         area=data.area,
         emotion=data.emotion,
+        sample_iteration=data.sample_iteration,
     )
     
     file_id = uuid4().hex[:10]  # A unique ID for our file
@@ -86,13 +88,14 @@ async def synthesize_to_file(data: SynthesizeRequest) -> SynthesizeFileResponse:
         await f.write(audio_bytes)
         
     file_size = len(audio_bytes)
-    
+    duration_seconds = file_size / (sr * 2)  # 16-bit audio
+
     # Store the file's information in our temporary cache.
     _file_cache[file_id] = {"path": file_path, "format": data.output_format}
-    
+
     return SynthesizeFileResponse(
         download_url=f"/api/v1/download/{file_id}",
-        duration_seconds=round(dur, 2),
+        duration_seconds=round(duration_seconds, 2),
         sample_rate=sr,
         format=data.output_format,
         file_size_bytes=file_size,
@@ -128,6 +131,7 @@ async def synthesize_and_download(data: SynthesizeRequest) -> Stream:
         group=data.group,
         area=data.area,
         emotion=data.emotion,
+        sample_iteration=data.sample_iteration,
     )
 
 

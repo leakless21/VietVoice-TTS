@@ -138,6 +138,7 @@ class ModelSessionManager:
                      group: Optional[str] = None,
                      area: Optional[str] = None,
                      emotion: Optional[str] = None,
+                     sample_iteration: Optional[int] = None,
                      reference_audio: Optional[str] = None,
                      reference_text: Optional[str] = None) -> Tuple[str, str]:
         """Select a sample from the metadata"""
@@ -182,7 +183,14 @@ class ModelSessionManager:
             if len(available_samples) == 0:
                 sample, sample_idx = self.sample_metadata[0], 0
             else:
-                sample, sample_idx = available_samples[0]
+                # Use sample_iteration to choose which available sample to use
+                if sample_iteration is not None:
+                    if sample_iteration >= len(available_samples):
+                        raise ValueError(f"sample_iteration {sample_iteration} is out of range. Only {len(available_samples)} samples available for the given filters.")
+                    sample, sample_idx = available_samples[sample_iteration]
+                    logger.info(f"Using sample iteration {sample_iteration} out of {len(available_samples)} available samples")
+                else:
+                    sample, sample_idx = available_samples[0]
 
             logger.info(f"Selected sample #{sample_idx} with gender: {sample['gender']}, group: {sample['group']}, area: {sample['area']}, emotion: {sample['emotion']}")
 
