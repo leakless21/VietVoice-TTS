@@ -15,7 +15,11 @@ The CLI component allows users to interact with the VietVoice TTS system to synt
 - **`get_default_settings() -> Dict[str, Any]`**: Returns a dictionary containing the default values for all optional parameters, used to initialize settings in interactive mode.
 - **`display_main_menu(settings: Dict[str, Any])`**: Displays the main interactive menu, showing current parameter selections and available sections for editing.
 - **`edit_voice_selection(settings: Dict[str, Any]) -> Dict[str, Any]`**: Allows users to modify voice-related parameters (`gender`, `group`, `area`, `emotion`).
-- **`edit_reference_audio(settings: Dict[str, Any]) -> Dict[str, Any]`**: Manages input for reference audio and text, including mutual requirement validation.
+- **`edit_reference_audio(settings: Dict[str, Any]) -> Dict[str, Any]`**: Manages input for reference audio and text with three modes:
+  1. Select from bundled reference samples (with preview)
+  2. Enter a custom path manually
+  3. Clear existing reference audio
+     Validates mutual requirement with reference text.
 - **`edit_performance_tuning(settings: Dict[str, Any]) -> Dict[str, Any]`**: Handles parameters related to speech speed and random seed.
 - **`edit_model_configuration(settings: Dict[str, Any]) -> Dict[str, Any]`**: Provides options for advanced model settings like `model_url`, `model_cache_dir`, `nfe_step`, and `fuse_nfe`.
 - **`edit_audio_processing(settings: Dict[str, Any]) -> Dict[str, Any]`**: Allows adjustment of audio output characteristics such as `cross_fade_duration`, `max_chunk_duration`, and `min_target_duration`.
@@ -54,6 +58,7 @@ The interactive mode is activated when `vietvoicetts/cli.py` is run without any 
 - **Modularity**: The interactive logic is separated into distinct functions for each menu section and input type, improving maintainability.
 - **Validation Parity**: The interactive mode's validation rules are designed to be equivalent to the original `argparse` checks, ensuring consistent behavior.
 - **Backward Compatibility**: Existing CLI integrations remain fully functional, as the interactive mode is only activated when no arguments are provided.
+- **Default Sample Integration**: The interactive mode supports both bundled reference samples and custom paths for default references. When no explicit reference is provided, uses ModelConfig defaults that can be configured through CLI settings.
 - **Python 3.8+ Compatibility**: The code adheres to Python 3.8+ syntax and features, including type hints.
 
 ## 5. File Location

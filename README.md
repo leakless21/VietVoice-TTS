@@ -36,39 +36,40 @@ Follow these instructions to get the API running on your local machine.
 - [Git](https://git-scm.com/) for cloning the repository.
 - It is highly recommended to use `uv` for fast dependency management.
 
-    ```bash
-    pip install uv
-    ```
+  ```bash
+  pip install uv
+  ```
 
 ### 2. Installation
 
 1. **Clone the repository:**
 
-    ```bash
-    git clone <your-repository-url>
-    cd <your-repository-directory>
-    ```
+   ```bash
+   git clone <your-repository-url>
+   cd <your-repository-directory>
+   ```
 
 2. **Create and activate a virtual environment:**
 
-    ```bash
-    uv venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    ```
+   ```bash
+   uv venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
 
 3. **Install all required dependencies:**
-    This command installs both the API requirements and the core `vietvoicetts` library's dependencies.
+   This command installs both the API requirements and the core `vietvoicetts` library's dependencies.
 
-    ```bash
-    uv pip install -r requirements-api.txt
-    pip install -e .
-    ```
+   ```bash
+   uv pip install -r requirements-api.txt
+   pip install -e .
+   ```
 
 ### 3. Running the API Locally
 
 Start the development server using Uvicorn:
 
 ```bash
+uv run run_api_server.py
 uvicorn vietvoicetts.api:app --host 0.0.0.0 --port 8000 --reload
 ```
 

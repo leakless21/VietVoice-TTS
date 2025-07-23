@@ -63,8 +63,8 @@ Interactive Mode:
     parser.add_argument("--reference-text", help="Text corresponding to reference audio")
     
     # Speed and random seed
-    parser.add_argument("--speed", type=float, default=0.9, help="Speech speed multiplier")
-    parser.add_argument("--random-seed", type=int, default=9527, help="Random seed. This is important for keeping the same voice when synthesizing.")
+    parser.add_argument("--speed", type=float, help="Speech speed multiplier")
+    parser.add_argument("--random-seed", type=int, help="Random seed. This is important for keeping the same voice when synthesizing.")
 
     # Model settings. These are not recommended to change.
     parser.add_argument("--model-url", help="URL to download model from")
@@ -223,25 +223,26 @@ def get_required_inputs() -> Dict[str, Any]:
 
 
 def get_default_settings() -> Dict[str, Any]:
-    """Get default settings for optional parameters"""
+    """Get default settings for optional parameters from ModelConfig"""
+    config = ModelConfig()
     return {
-        'gender': "female",
-        'group': None,
-        'area': "northern",
-        'emotion': "neutral",
+        'gender': config.gender,
+        'group': config.group,
+        'area': config.area,
+        'emotion': config.emotion,
         'reference_audio': None,
         'reference_text': None,
-        'speed': 0.9,
-        'random_seed': 9527,
+        'speed': config.speed,
+        'random_seed': config.random_seed,
         'model_url': None,
-        'nfe_step': 32,
-        'fuse_nfe': 1,
-        'cross_fade_duration': 0.1,
-        'max_chunk_duration': 15.0,
-        'min_target_duration': 1.0,
-        'inter_op_threads': 0,
-        'intra_op_threads': 0,
-        'log_severity': 4
+        'nfe_step': config.nfe_step,
+        'fuse_nfe': config.fuse_nfe,
+        'cross_fade_duration': config.cross_fade_duration,
+        'max_chunk_duration': config.max_chunk_duration,
+        'min_target_duration': config.min_target_duration,
+        'inter_op_threads': config.inter_op_num_threads,
+        'intra_op_threads': config.intra_op_num_threads,
+        'log_severity': config.log_severity_level
     }
 
 
@@ -418,7 +419,7 @@ def _browse_reference_samples() -> Optional[ReferenceSample]:
         return None
 
     # Active filters
-    filters = {"gender": None, "group": None, "area": None, "emotion": None}
+    filters: Dict[str, Optional[str]] = {"gender": None, "group": None, "area": None, "emotion": None}
 
     while True:
         # Apply filters

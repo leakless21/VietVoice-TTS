@@ -26,6 +26,7 @@
 - **FR-8: Configurable Default Voice:** The default voice gender MUST be configurable. The initial default value will be "female".
 - **FR-9: Configurable Default Emotion:** The default voice emotion MUST be configurable. The initial default value will be "neutral".
 - **FR-10: Client API Defaults:** The high-level client API (`vietvoicetts/client.py`) MUST use "female" as the default gender and "neutral" as the default emotion if not explicitly provided.
+- **FR-11: Configurable Default Samples:** The system MUST allow configuration of default reference audio samples. Users can select from bundled samples or provide custom paths. When no explicit reference is provided, the system uses the configured default sample based on voice parameters (gender, group, area, emotion).
 
 ### API Endpoints
 

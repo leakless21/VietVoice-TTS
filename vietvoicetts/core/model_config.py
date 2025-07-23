@@ -33,6 +33,12 @@ class ModelConfig:
     random_seed: int = 9527
     hop_length: int = 256
     
+    # Sample selection
+    gender: Optional[str] = "female"
+    area: Optional[str] = "northern"
+    emotion: Optional[str] = "neutral"
+    group: Optional[str] = "audiobook"
+    
     # Text processing
     pause_punctuation: str = r".,?!:"
     

@@ -49,10 +49,10 @@ async def synthesize_async(
     Args:
         text: The text to synthesize.
         speed: The desired speech speed.
-        gender: Filter by voice gender.
-        group: Filter by voice group.
-        area: Filter by voice area.
-        emotion: Filter by voice emotion.
+        gender: Filter by voice gender. Uses ModelConfig default if None.
+        group: Filter by voice group. Uses ModelConfig default if None.
+        area: Filter by voice area. Uses ModelConfig default if None.
+        emotion: Filter by voice emotion. Uses ModelConfig default if None.
         sample_iteration: Which iteration of available samples to use (0-based).
 
     Returns:
@@ -68,15 +68,21 @@ async def synthesize_async(
         original_speed = engine.config.speed
         engine.config.speed = speed
 
+        # Use provided parameters or fall back to ModelConfig defaults (not engine.config, which may be mutated)
+        gender_value: str | None = gender.value if gender else _engine_config.gender
+        group_value: str | None = group.value if group else _engine_config.group
+        area_value: str | None = area.value if area else _engine_config.area
+        emotion_value: str | None = emotion.value if emotion else _engine_config.emotion
+
         # The `run_sync` function takes our blocking `synthesize_to_bytes` call
         # and runs it in a background thread, awaiting the result.
         result = await to_thread.run_sync(
             engine.synthesize_to_bytes,
             text,
-            gender.value if gender else None,
-            group.value if group else None,
-            area.value if area else None,
-            emotion.value if emotion else None,
+            gender_value,
+            group_value,
+            area_value,
+            emotion_value,
             sample_iteration,
         )
         audio_bytes, _ = result

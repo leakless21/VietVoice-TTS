@@ -12,12 +12,14 @@
 - **Group**: `"story"`, `"news"`, `"audiobook"`, `"interview"`, `"review"`
 - **Area**: `"northern"`, `"southern"`, `"central"`
 - **Emotion**: `"neutral"`, `"serious"`, `"monotone"`, `"sad"`, `"surprised"`, `"happy"`, `"angry"`
+- **Sample Iteration**: `Optional[int]` - Selects which iteration of available samples to use (0-based index). When not specified, uses the first available sample.
 
 ## Key Functionality
 
-- Audio synthesis via `POST /synthesize`
-- File generation via `POST /synthesize/file`
+- Audio synthesis via `POST /synthesize` with support for configurable default samples
+- File generation via `POST /synthesize/file` with configurable default sample selection
 - File download via `GET /download/{id}`
+- Default sample selection follows priority: explicit parameters > ModelConfig defaults > bundled reference samples
 
 ## Limitations
 

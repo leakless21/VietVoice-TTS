@@ -142,6 +142,12 @@ class ModelSessionManager:
                      reference_audio: Optional[str] = None,
                      reference_text: Optional[str] = None) -> Tuple[str, str]:
         """Select a sample from the metadata"""
+        # Use config defaults if parameters not provided
+        gender = gender or self.config.gender
+        group = group or self.config.group
+        area = area or self.config.area
+        emotion = emotion or self.config.emotion
+        
         filter_options = {}
         if gender is not None:
             if gender not in MODEL_GENDER:
