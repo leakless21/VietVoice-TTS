@@ -73,39 +73,52 @@ class TextProcessor:
         
         return text
     
-    def chunk_text(self, text: str, max_chars: int = 150) -> List[str]:
-        """Split text into chunks with maximum character limit"""
+    def chunk_text(self, text: str, max_chars: int = 135) -> List[str]:
+        """Split text into chunks with maximum character limit, respecting word boundaries"""
+        if not text.strip():
+            return []
+        
         # Split text into sentences
         sentences = []
         
         # Split by .?!
         for s in re.split(r'(?<=[.!?]) +', text.strip()):
             s = s.strip()
-            if s:            
-                if len(s) < max_chars:
+            if s:
+                if len(s) <= max_chars:
                     sentences.append(s)
                     continue
                 
-                # split by commas
+                # Split by commas for long sentences
                 for part in s.split(', '):
                     part = part.strip()
                     if part:
-                        if not part.endswith(','):
-                            part += ','
-                            
-                        # Make sure sentences are not too long, cut them if necessary
-                        if len(part) < max_chars:
+                        # Handle parts that are still too long
+                        if len(part) <= max_chars:
                             sentences.append(part)
                         else:
-                            logger.warning(f"Part too long ({len(part)} chars), splitting further: {part[:50]}...")
-                            num_parts = len(part) // max_chars + 1
-                            part_length = len(part) // num_parts
-                            for i in range(num_parts):
-                                start = i * part_length
-                                end = (i + 1) * part_length if i < num_parts - 1 else len(part)
-                                sub_part = part[start:end].strip()
-                                if sub_part:
-                                    sentences.append(sub_part)
+                            # Split at word boundaries instead of character boundaries
+                            logger.warning(f"Part too long ({len(part)} chars), splitting at word boundaries: {part[:50]}...")
+                            words = part.split()
+                            current_part = ""
+                            
+                            for word in words:
+                                # Check if adding this word would exceed max_chars
+                                if current_part and len(current_part + " " + word) > max_chars:
+                                    # Save current part and start new one
+                                    if current_part.strip():
+                                        sentences.append(current_part.strip())
+                                    current_part = word
+                                else:
+                                    # Add word to current part
+                                    if current_part:
+                                        current_part += " " + word
+                                    else:
+                                        current_part = word
+                            
+                            # Add remaining part
+                            if current_part.strip():
+                                sentences.append(current_part.strip())
         
         if not sentences:
             return []
@@ -159,4 +172,4 @@ class TextProcessor:
             i += 1
         
         logger.debug(f"chunk_text: {len(final_chunks)} chunks: {[len(text) for text in final_chunks]}. Max chars: {max_chars}")
-        return final_chunks 
+        return final_chunks

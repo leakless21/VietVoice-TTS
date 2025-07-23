@@ -55,7 +55,7 @@ def main():
             "vietvoicetts.api.app:app",
             host=host,
             port=port,
-            reload=False,  # Disable reload to maintain deterministic state
+            reload=True,  # Disable reload to maintain deterministic state
             workers=1,     # Single worker for deterministic behavior
             log_level="info"
         )
