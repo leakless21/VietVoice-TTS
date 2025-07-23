@@ -73,3 +73,32 @@ All parameters are validated against predefined constants:
 - **MODEL_GROUP**: ["story", "news", "audiobook", "interview", "review"]
 - **MODEL_AREA**: ["northern", "southern", "central"]
 - **MODEL_EMOTION**: ["neutral", "serious", "monotone", "sad", "surprised", "happy", "angry"]
+
+## Text Processing
+
+The text processing component, located in [`vietvoicetts/core/text_processor.py`](vietvoicetts/core/text_processor.py), is responsible for cleaning and chunking input text before it is passed to the TTS model.
+
+### Text Chunking
+
+To ensure natural-sounding speech, the system uses a language-agnostic, word-boundary-aware text chunking strategy.
+
+The chunking process is as follows:
+
+1.  The input text is first split into sentences using punctuation marks (`.`, `!`, `?`).
+2.  Each sentence is then processed. If a sentence is longer than the maximum allowed characters, it is further split into smaller chunks.
+3.  The splitting of long sentences is done by splitting the sentence into words (using spaces) and then grouping the words into chunks that do not exceed the maximum character limit. This ensures that no words are ever split in the middle.
+
+### Chunking Workflow
+
+```mermaid
+graph TD
+    A[Input Text] --> B{Split by punctuation};
+    B --> C{For each sentence};
+    C --> D{Length < max_chars?};
+    D -- Yes --> E[Add to Chunk];
+    D -- No --> F{Split sentence into words};
+    F --> G[Group words into chunks];
+    G --> E;
+    E --> H[Assemble Chunks];
+    H --> I[Output Chunks];
+```

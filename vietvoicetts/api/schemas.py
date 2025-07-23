@@ -42,7 +42,7 @@ class SynthesizeRequest(BaseModel):
     text: str = Field(
         ..., 
         min_length=1, 
-        max_length=500,
+        max_length=1000,
         description="The text to be synthesized into speech."
     )
     speed: float = Field(

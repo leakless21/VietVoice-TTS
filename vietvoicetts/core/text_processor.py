@@ -73,7 +73,7 @@ class TextProcessor:
         
         return text
     
-    def chunk_text(self, text: str, max_chars: int = 135) -> List[str]:
+    def chunk_text(self, text: str, max_chars: int = 150) -> List[str]:
         """Split text into chunks with maximum character limit"""
         # Split text into sentences
         sentences = []
